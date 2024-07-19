@@ -7,9 +7,7 @@ const app = express();
 const port = 3000;
 
 // Configuration pour servir les fichiers statiques
-app.use(
-  express.static(path.join("C:/Users/juan_/Documents/Paris 2024/jo2024"))
-);
+app.use(express.static(path.join("C:/Users/juan_/Documents/Paris2024/jo2024")));
 app.use(bodyParser.json());
 
 // Exemple de données de messages
