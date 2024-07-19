@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inscription - Réseau Social JO 2024</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Inscription au Réseau Social des Jeux Olympiques 2024</h1>
+      <div id="errorMessage" class="error-message"></div>
+      <div id="successMessage" class="success-message"></div>
+      <form id="registerForm">
+        <input
+          type="text"
+          id="registerUsername"
+          placeholder="Nom d'utilisateur"
+          required
+        />
+        <input type="email" id="registerEmail" placeholder="Email" required />
+        <input
+          type="password"
+          id="registerPassword"
+          placeholder="Mot de passe"
+          required
+        />
+        <button type="submit">S'inscrire</button>
+      </form>
+      <a href="index.html">Retour à l'accueil</a>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+      document
+        .getElementById("registerForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          const username = document.getElementById("registerUsername").value;
+          const email = document.getElementById("registerEmail").value;
+          const password = document.getElementById("registerPassword").value;
+
+          fetch("/api/register", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ username, email, password }),
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.error) {
+                document.getElementById("errorMessage").textContent =
+                  data.error;
+              } else {
+                document.getElementById("successMessage").textContent =
+                  data.message;
+                document.getElementById("registerForm").reset();
+              }
+            })
+            .catch((error) => console.error("Error:", error));
+        });
+    </script>
+  </body>
+</html>
