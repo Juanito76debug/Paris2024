@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Déconnexion - Réseau Social JO 2024</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Déconnexion</h1>
+      <p>Vous avez été déconnecté avec succès.</p>
+      <a href="index.html">Retour à l'accueil</a>
+    </div>
+    <script>
+      // Supprime les informations de l'utilisateur du stockage local
+      localStorage.removeItem("username");
+      localStorage.removeItem("email");
+      localStorage.removeItem("userType");
+    </script>
+  </body>
+</html>

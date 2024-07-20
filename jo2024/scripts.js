@@ -3,13 +3,14 @@ window.onload = function () {
   function getUserType() {
     // Remplace cette logique par la logique réelle pour déterminer le type d'utilisateur
     // Par exemple, tu peux récupérer cette information depuis le backend ou les cookies
-    return "visiteur"; // 'visiteur', 'membre' ou 'administrateur'
+    return localStorage.getItem("userType") || "visiteur"; // 'visiteur', 'membre' ou 'administrateur'
   }
 
-  // Afficher ou masquer la section d'inscription en fonction du type d'utilisateur
+  // Afficher ou masquer la section d'inscription et le bouton de déconnexion en fonction du type d'utilisateur
   const userType = getUserType();
   if (userType !== "visiteur") {
     document.getElementById("registerBox").style.display = "none";
+    document.getElementById("logoutButton").style.display = "block"; // Affiche le bouton de déconnexion
   }
 
   // Rediriger les administrateurs et les membres depuis la page de connexion
@@ -75,6 +76,7 @@ window.onload = function () {
             // Stocke les informations de l'utilisateur dans le stockage local
             localStorage.setItem("username", data.username);
             localStorage.setItem("email", data.email);
+            localStorage.setItem("userType", data.userType); // Stocke le type d'utilisateur
             // Redirige vers la page de profil après une connexion réussie
             window.location.href = "profile.html";
           }
@@ -138,4 +140,17 @@ window.onload = function () {
           });
       });
   }
+
+  // Logique de déconnexion
+  document
+    .getElementById("logoutButton")
+    .addEventListener("click", function () {
+      // Supprime les informations de l'utilisateur du stockage local
+      localStorage.removeItem("username");
+      localStorage.removeItem("email");
+      localStorage.removeItem("userType");
+
+      // Redirige vers la page de connexion après la déconnexion
+      window.location.href = "login.html";
+    });
 };

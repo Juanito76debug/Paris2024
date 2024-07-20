@@ -48,24 +48,22 @@
           })
             .then((response) => {
               if (!response.ok) {
-                throw new Error("Network response was not ok");
+                return response.json().then((err) => {
+                  throw err;
+                });
               }
               return response.json();
             })
             .then((data) => {
-              if (data.error) {
-                document.getElementById("errorMessage").textContent =
-                  data.error;
-              } else {
-                document.getElementById("successMessage").textContent =
-                  data.message;
-                document.getElementById("registerForm").reset();
-              }
+              document.getElementById("successMessage").textContent =
+                data.message;
+              document.getElementById("registerForm").reset();
             })
             .catch((error) => {
               console.error("Error:", error);
               document.getElementById("errorMessage").textContent =
-                "Une erreur s'est produite. Veuillez réessayer.";
+                error.message ||
+                "Une erreur s'est produite côté serveur. Veuillez réessayer plus tard.";
             });
         });
     </script>
