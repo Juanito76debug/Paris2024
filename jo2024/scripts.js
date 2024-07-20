@@ -12,9 +12,14 @@ window.onload = function () {
     document.getElementById("registerBox").style.display = "none";
   }
 
+  // Rediriger les administrateurs et les membres depuis la page de connexion
+  if (userType === "membre" || userType === "administrateur") {
+    window.location.href = "profile.html"; // Redirige vers la page de profil ou une autre page
+  }
+
   // Fonction pour récupérer le nombre de messages publiés
   function fetchMessageCount() {
-    fetch("/api/messageCount")
+    fetch("http://localhost:3000/api/messageCount")
       .then((response) => response.json())
       .then((data) => {
         document.getElementById("messageNumber").textContent = data.count;
@@ -24,7 +29,7 @@ window.onload = function () {
 
   // Fonction pour récupérer le nombre de membres connectés
   function fetchConnectedMembers() {
-    fetch("/api/connectedMembers")
+    fetch("http://localhost:3000/api/connectedMembers")
       .then((response) => response.json())
       .then((data) => {
         document.getElementById("memberNumber").textContent = data.count;
@@ -42,47 +47,95 @@ window.onload = function () {
   setInterval(fetchMessageCount, 10000);
   setInterval(fetchConnectedMembers, 10000);
 
+  // Logique de soumission du formulaire de connexion
   document
     .getElementById("loginForm")
     .addEventListener("submit", function (event) {
       event.preventDefault();
       const username = document.getElementById("loginUsername").value;
       const password = document.getElementById("loginPassword").value;
-      alert(`Connexion avec le nom d'utilisateur : ${username}`);
-      // Ajoute ici la logique de connexion
-    });
 
-  document
-    .getElementById("registerForm")
-    .addEventListener("submit", function (event) {
-      event.preventDefault();
-      const username = document.getElementById("registerUsername").value;
-      const email = document.getElementById("registerEmail").value;
-      const password = document.getElementById("registerPassword").value;
-
-      // Vérification des données d'inscription
-      if (username.length < 3) {
-        alert("Le nom d'utilisateur doit comporter au moins 3 caractères.");
-        return;
-      }
-      if (!validateEmail(email)) {
-        alert("Veuillez entrer une adresse email valide.");
-        return;
-      }
-      if (password.length < 6) {
-        alert("Le mot de passe doit comporter au moins 6 caractères.");
-        return;
-      }
-
-      alert(
-        `Inscription avec le nom d'utilisateur : ${username} et l'email : ${email}`
-      );
-      // Ajoute ici la logique d'inscription
+      fetch("http://localhost:3000/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          if (data.error) {
+            document.getElementById("errorMessage").textContent = data.error;
+          } else {
+            // Stocke les informations de l'utilisateur dans le stockage local
+            localStorage.setItem("username", data.username);
+            localStorage.setItem("email", data.email);
+            // Redirige vers la page de profil après une connexion réussie
+            window.location.href = "profile.html";
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          document.getElementById("errorMessage").textContent =
+            "Une erreur s'est produite. Veuillez réessayer.";
+        });
     });
 
   // Fonction pour valider l'email
   function validateEmail(email) {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(String(email).toLowerCase());
+  }
+
+  // Logique pour afficher les informations du profil sur la page de profil
+  if (window.location.pathname.endsWith("profile.html")) {
+    const username = localStorage.getItem("username");
+    const email = localStorage.getItem("email");
+
+    if (username && email) {
+      document.getElementById("username").textContent = username;
+      document.getElementById("email").textContent = email;
+    } else {
+      // Redirige vers la page de connexion si les informations de l'utilisateur ne sont pas disponibles
+      window.location.href = "login.html";
+    }
+
+    // Logique de soumission du formulaire de publication
+    document
+      .getElementById("postForm")
+      .addEventListener("submit", function (event) {
+        event.preventDefault();
+        const postContent = document.getElementById("postContent").value;
+
+        fetch("http://localhost:3000/api/posts", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ content: postContent, username: username }),
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            // Affiche le nouveau message publié
+            const postElement = document.createElement("div");
+            postElement.textContent = data.content;
+            document.getElementById("posts").appendChild(postElement);
+            document.getElementById("postForm").reset();
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Une erreur s'est produite. Veuillez réessayer.");
+          });
+      });
   }
 };

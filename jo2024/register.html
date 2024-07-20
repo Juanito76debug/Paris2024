@@ -39,14 +39,19 @@
           const email = document.getElementById("registerEmail").value;
           const password = document.getElementById("registerPassword").value;
 
-          fetch("/api/register", {
+          fetch("http://localhost:3000/api/register", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({ username, email, password }),
           })
-            .then((response) => response.json())
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error("Network response was not ok");
+              }
+              return response.json();
+            })
             .then((data) => {
               if (data.error) {
                 document.getElementById("errorMessage").textContent =
@@ -57,7 +62,11 @@
                 document.getElementById("registerForm").reset();
               }
             })
-            .catch((error) => console.error("Error:", error));
+            .catch((error) => {
+              console.error("Error:", error);
+              document.getElementById("errorMessage").textContent =
+                "Une erreur s'est produite. Veuillez réessayer.";
+            });
         });
     </script>
   </body>
