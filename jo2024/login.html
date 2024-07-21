@@ -9,22 +9,25 @@
   <body>
     <div class="container">
       <h1>Connexion au Réseau Social des Jeux Olympiques 2024</h1>
-      <div id="errorMessage" class="error-message"></div>
+      <div id="errorMessage" class="error-message" aria-live="polite"></div>
       <form id="loginForm">
         <input
           type="text"
           id="loginUsername"
+          name="username"
           placeholder="Nom d'utilisateur"
           required
         />
         <input
           type="password"
           id="loginPassword"
+          name="password"
           placeholder="Mot de passe"
           required
         />
         <button type="submit">Se connecter</button>
       </form>
+      <a href="forgot-password.html">Mot de passe perdu ?</a>
       <a href="index.html">Retour à l'accueil</a>
     </div>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>

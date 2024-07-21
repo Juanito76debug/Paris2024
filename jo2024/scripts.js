@@ -153,4 +153,88 @@ window.onload = function () {
       // Redirige vers la page de connexion après la déconnexion
       window.location.href = "login.html";
     });
+
+  // Logique de soumission du formulaire de mot de passe perdu
+  if (window.location.pathname.endsWith("forgot-password.html")) {
+    document
+      .getElementById("forgotPasswordForm")
+      .addEventListener("submit", function (event) {
+        event.preventDefault();
+        const email = document.getElementById("forgotPasswordEmail").value;
+
+        if (!validateEmail(email)) {
+          document.getElementById("errorMessage").textContent =
+            "Veuillez entrer une adresse email valide.";
+          return;
+        }
+
+        fetch("http://localhost:3000/api/forgot-password", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email }),
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            if (data.error) {
+              document.getElementById("errorMessage").textContent = data.error;
+            } else {
+              document.getElementById("successMessage").textContent =
+                "Un email de réinitialisation de mot de passe a été envoyé.";
+              document.getElementById("forgotPasswordForm").reset();
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            document.getElementById("errorMessage").textContent =
+              "Une erreur s'est produite. Veuillez réessayer.";
+          });
+      });
+  }
+
+  // Logique de soumission du formulaire de réinitialisation de mot de passe
+  if (window.location.pathname.endsWith("reset-password.html")) {
+    document
+      .getElementById("resetPasswordForm")
+      .addEventListener("submit", function (event) {
+        event.preventDefault();
+        const newPassword = document.getElementById("newPassword").value;
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get("token");
+
+        fetch("http://localhost:3000/api/reset-password", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ token, newPassword }),
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            if (data.error) {
+              document.getElementById("errorMessage").textContent = data.error;
+            } else {
+              document.getElementById("successMessage").textContent =
+                "Votre mot de passe a été réinitialisé avec succès.";
+              document.getElementById("resetPasswordForm").reset();
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            document.getElementById("errorMessage").textContent =
+              "Une erreur s'est produite. Veuillez réessayer.";
+          });
+      });
+  }
 };

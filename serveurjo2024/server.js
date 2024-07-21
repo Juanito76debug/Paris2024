@@ -27,6 +27,7 @@ const userSchema = new mongoose.Schema({
   username: String,
   email: String,
   password: String,
+  resetToken: String, // Ajoute ce champ pour le token de réinitialisation
 });
 
 const User = mongoose.model("User", userSchema);
@@ -128,6 +129,57 @@ app.post("/api/register", async (req, res) => {
     res
       .status(500)
       .json({ error: "Erreur lors de l'inscription: " + err.message });
+  }
+});
+
+// Route pour gérer la demande de mot de passe perdu
+app.post("/api/forgot-password", async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    // Vérifie si l'utilisateur existe
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: "Email non trouvé." });
+    }
+
+    // Génère un nouveau mot de passe (exemple simplifié)
+    const newPassword = Math.random().toString(36).substr(2, 8);
+
+    // Hacher le nouveau mot de passe
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Mettre à jour le mot de passe de l'utilisateur
+    user.password = hashedPassword;
+    await user.save();
+
+    // Configuration de nodemailer pour envoyer l'email avec les nouveaux identifiants
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Nouveaux identifiants de connexion",
+      text: `Bonjour,\n\nVotre mot de passe a été réinitialisé. Voici vos nouveaux identifiants de connexion :\n\nNom d'utilisateur : ${user.username}\nNouveau mot de passe : ${newPassword}\n\nMerci de vous connecter et de changer votre mot de passe dès que possible.\n\nCordialement,\nL'équipe JO 2024`,
+    };
+
+    // Envoi de l'email
+    await transporter.sendMail(mailOptions);
+    console.log("Email avec les nouveaux identifiants envoyé");
+
+    res.status(200).json({
+      message:
+        "Un email avec vos nouveaux identifiants de connexion a été envoyé.",
+    });
+  } catch (err) {
+    console.error("Erreur lors de la demande de mot de passe perdu:", err);
+    res.status(500).json({ error: "Erreur du serveur." });
   }
 });
 
