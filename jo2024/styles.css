@@ -1,16 +1,25 @@
 body {
   font-family: Arial, sans-serif;
   background-color: #f4f4f4;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  height: 100vh;
   margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
 }
 
 .container {
   text-align: center;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
 }
 
 .presentation-image {
@@ -34,7 +43,8 @@ h1 {
   margin-left: 10px; /* Espace entre le texte et l'image */
 }
 
-.message-count, .connected-members {
+.message-count,
+.connected-members {
   font-size: 1.2em;
   margin-bottom: 20px;
 }
@@ -52,8 +62,9 @@ h1 {
 /* Styles pour les formulaires */
 .form-container {
   display: flex;
-  justify-content: space-around;
-  margin-top: 20px;
+  flex-direction: column;
+  width: 100%;
+  align-items: center;
 }
 
 .form-box {
@@ -61,11 +72,13 @@ h1 {
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  width: 300px;
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 20px;
 }
 
 h2 {
-  color: #007BFF;
+  color: #007bff;
   margin-bottom: 20px;
 }
 
@@ -80,7 +93,7 @@ input {
 button {
   width: 100%;
   padding: 10px;
-  background-color: #007BFF;
+  background-color: #007bff;
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -89,4 +102,37 @@ button {
 
 button:hover {
   background-color: #0056b3;
+}
+
+/* Media queries pour les écrans de bureau */
+@media (min-width: 1024px) {
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+}
+
+/* Media queries pour les tablettes */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .container {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+}
+
+/* Media queries pour les téléphones mobiles */
+@media (max-width: 767px) {
+  .container {
+    max-width: 100%;
+    padding: 10px;
+  }
+
+  .form-box {
+    width: 100%;
+    margin-bottom: 20px;
+  }
+
+  .inline-image {
+    width: 30px; /* Ajuste la taille selon tes besoins */
+  }
 }
