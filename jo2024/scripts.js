@@ -98,28 +98,63 @@ window.onload = function () {
   if (window.location.pathname.endsWith("profile.html")) {
     const username = localStorage.getItem("username");
     const email = localStorage.getItem("email");
+    const lastName = localStorage.getItem("lastName");
+    const firstName = localStorage.getItem("firstName");
+    const age = localStorage.getItem("age");
+    const gender = localStorage.getItem("gender");
+    const preferences = localStorage.getItem("preferences");
+    const profilePhoto = localStorage.getItem("profilePhoto");
+    const bio = localStorage.getItem("bio");
 
     if (username && email) {
       document.getElementById("username").textContent = username;
       document.getElementById("email").textContent = email;
+      document.getElementById("lastName").textContent = lastName;
+      document.getElementById("firstName").textContent = firstName;
+      document.getElementById("age").textContent = age;
+      document.getElementById("gender").textContent = gender;
+      document.getElementById("preferences").textContent = preferences;
+      document.getElementById("profilePhoto").src = profilePhoto;
+      document.getElementById("bio").textContent = bio;
+
+      // Pré-remplir le formulaire de modification avec les informations actuelles
+      document.getElementById("editUsername").value = username;
+      document.getElementById("editEmail").value = email;
+      document.getElementById("editLastName").value = lastName;
+      document.getElementById("editFirstName").value = firstName;
+      document.getElementById("editAge").value = age;
+      document.getElementById("editGender").value = gender;
+      document.getElementById("editPreferences").value = preferences;
+      document.getElementById("editProfilePhoto").value = profilePhoto;
+      document.getElementById("editBio").value = bio;
     } else {
       // Redirige vers la page de connexion si les informations de l'utilisateur ne sont pas disponibles
       window.location.href = "login.html";
     }
 
-    // Logique de soumission du formulaire de publication
+    // Logique de soumission du formulaire de modification du profil
     document
-      .getElementById("postForm")
+      .getElementById("editProfileForm")
       .addEventListener("submit", function (event) {
         event.preventDefault();
-        const postContent = document.getElementById("postContent").value;
+        const updatedProfile = {
+          username: document.getElementById("editUsername").value,
+          email: document.getElementById("editEmail").value,
+          lastName: document.getElementById("editLastName").value,
+          firstName: document.getElementById("editFirstName").value,
+          age: document.getElementById("editAge").value,
+          gender: document.getElementById("editGender").value,
+          preferences: document.getElementById("editPreferences").value,
+          profilePhoto: document.getElementById("editProfilePhoto").value,
+          bio: document.getElementById("editBio").value,
+        };
 
-        fetch("http://localhost:3000/api/posts", {
+        fetch("http://localhost:3000/api/updateProfile", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ content: postContent, username: username }),
+          body: JSON.stringify(updatedProfile),
         })
           .then((response) => {
             if (!response.ok) {
@@ -128,18 +163,207 @@ window.onload = function () {
             return response.json();
           })
           .then((data) => {
-            // Affiche le nouveau message publié
-            const postElement = document.createElement("div");
-            postElement.textContent = data.content;
-            document.getElementById("posts").appendChild(postElement);
-            document.getElementById("postForm").reset();
+            if (data.error) {
+              alert(data.error);
+            } else {
+              // Mettre à jour les informations dans le stockage local
+              localStorage.setItem("username", updatedProfile.username);
+              localStorage.setItem("email", updatedProfile.email);
+              localStorage.setItem("lastName", updatedProfile.lastName);
+              localStorage.setItem("firstName", updatedProfile.firstName);
+              localStorage.setItem("age", updatedProfile.age);
+              localStorage.setItem("gender", updatedProfile.gender);
+              localStorage.setItem("preferences", updatedProfile.preferences);
+              localStorage.setItem("profilePhoto", updatedProfile.profilePhoto);
+              localStorage.setItem("bio", updatedProfile.bio);
+
+              // Mettre à jour l'affichage des informations du profil
+              document.getElementById("username").textContent =
+                updatedProfile.username;
+              document.getElementById("email").textContent =
+                updatedProfile.email;
+              document.getElementById("lastName").textContent =
+                updatedProfile.lastName;
+              document.getElementById("firstName").textContent =
+                updatedProfile.firstName;
+              document.getElementById("age").textContent = updatedProfile.age;
+              document.getElementById("gender").textContent =
+                updatedProfile.gender;
+              document.getElementById("preferences").textContent =
+                updatedProfile.preferences;
+              document.getElementById("profilePhoto").src =
+                updatedProfile.profilePhoto;
+              document.getElementById("bio").textContent = updatedProfile.bio;
+
+              alert("Profil mis à jour avec succès !");
+            }
           })
           .catch((error) => {
             console.error("Error:", error);
             alert("Une erreur s'est produite. Veuillez réessayer.");
           });
       });
+
+    // Logique de soumission du formulaire de recherche
+    document
+      .getElementById("searchForm")
+      .addEventListener("submit", function (event) {
+        event.preventDefault();
+        const searchUsername = document.getElementById("searchUsername").value;
+
+        fetch(`http://localhost:3000/api/user/${searchUsername}`)
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            if (data.error) {
+              alert(data.error);
+            } else {
+              document.getElementById("friendUsername").value = data.username;
+              document.getElementById("friendEmail").value = data.email;
+              document.getElementById("friendLastName").value = data.lastName;
+              document.getElementById("friendFirstName").value = data.firstName;
+              document.getElementById("friendAge").value = data.age;
+              document.getElementById("friendGender").value = data.gender;
+              document.getElementById("friendPreferences").value =
+                data.preferences;
+              document.getElementById("friendProfilePhoto").value =
+                data.profilePhoto;
+              document.getElementById("friendBio").value = data.bio;
+              document.getElementById("friendProfile").style.display = "block";
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Une erreur s'est produite. Veuillez réessayer.");
+          });
+      });
+
+    // Logique de soumission du formulaire de modification du profil d'un ami
+    document
+      .getElementById("editFriendProfileForm")
+      .addEventListener("submit", function (event) {
+        event.preventDefault();
+        const updatedFriendProfile = {
+          username: document.getElementById("friendUsername").value,
+          email: document.getElementById("friendEmail").value,
+          lastName: document.getElementById("friendLastName").value,
+          firstName: document.getElementById("friendFirstName").value,
+          age: document.getElementById("friendAge").value,
+          gender: document.getElementById("friendGender").value,
+          preferences: document.getElementById("friendPreferences").value,
+          profilePhoto: document.getElementById("friendProfilePhoto").value,
+          bio: document.getElementById("friendBio").value,
+        };
+
+        fetch("http://localhost:3000/api/updateFriendProfile", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedFriendProfile),
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            if (data.error) {
+              alert(data.error);
+            } else {
+              alert("Profil de l'utilisateur mis à jour avec succès !");
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Une erreur s'est produite. Veuillez réessayer.");
+          });
+      });
+
+    // Logique pour récupérer et afficher tous les profils
+    fetch("http://localhost:3000/api/users")
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        const profilesList = document.getElementById("profilesList");
+        data.forEach((user) => {
+          const listItem = document.createElement("li");
+          listItem.textContent = `${user.username} - ${user.email}`;
+          listItem.addEventListener("click", () => {
+            document.getElementById("friendUsername").value = user.username;
+            document.getElementById("friendEmail").value = user.email;
+            document.getElementById("friendLastName").value = user.lastName;
+            document.getElementById("friendFirstName").value = user.firstName;
+            document.getElementById("friendAge").value = user.age;
+            document.getElementById("friendGender").value = user.gender;
+            document.getElementById("friendPreferences").value =
+              user.preferences;
+            document.getElementById("friendProfilePhoto").value =
+              user.profilePhoto;
+            document.getElementById("friendBio").value = user.bio;
+            document.getElementById("friendProfile").style.display = "block";
+          });
+          profilesList.appendChild(listItem);
+        });
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        alert("Une erreur s'est produite. Veuillez réessayer.");
+      });
   }
+
+  // Logique de suppression du profil
+  document
+    .getElementById("deleteProfileButton")
+    .addEventListener("click", function () {
+      if (confirm("Êtes-vous sûr de vouloir supprimer votre profil ?")) {
+        fetch("http://localhost:3000/api/deleteProfile", {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ username }),
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            if (data.error) {
+              alert(data.error);
+            } else {
+              alert("Profil supprimé avec succès !");
+              // Supprime les informations de l'utilisateur du stockage local
+              localStorage.removeItem("username");
+              localStorage.removeItem("email");
+              localStorage.removeItem("lastName");
+              localStorage.removeItem("firstName");
+              localStorage.removeItem("age");
+              localStorage.removeItem("gender");
+              localStorage.removeItem("preferences");
+              localStorage.removeItem("profilePhoto");
+              localStorage.removeItem("bio");
+              // Redirige vers la page de connexion après la suppression
+              window.location.href = "login.html";
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Une erreur s'est produite. Veuillez réessayer.");
+          });
+      }
+    });
 
   // Logique de déconnexion
   document
@@ -152,6 +376,71 @@ window.onload = function () {
 
       // Redirige vers la page de connexion après la déconnexion
       window.location.href = "login.html";
+    });
+
+  document
+    .getElementById("deleteFriendProfileButton")
+    .addEventListener("click", function () {
+      const username = document.getElementById("friendUsername").value;
+      if (confirm("Êtes-vous sûr de vouloir supprimer ce profil ?")) {
+        fetch("http://localhost:3000/api/deleteFriendProfile", {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ username }),
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            if (data.error) {
+              alert(data.error);
+            } else {
+              alert("Profil supprimé avec succès !");
+              // Cache le formulaire de modification du profil de l'ami
+              document.getElementById("friendProfile").style.display = "none";
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Une erreur s'est produite. Veuillez réessayer.");
+          });
+      }
+    });
+  document
+    .getElementById("deleteAllProfilesButton")
+    .addEventListener("click", function () {
+      if (confirm("Êtes-vous sûr de vouloir supprimer tous les profils ?")) {
+        fetch("http://localhost:3000/api/deleteAllProfiles", {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            if (data.error) {
+              alert(data.error);
+            } else {
+              alert("Tous les profils ont été supprimés avec succès !");
+              // Cache la liste des profils
+              document.getElementById("profilesList").innerHTML = "";
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Une erreur s'est produite. Veuillez réessayer.");
+          });
+      }
     });
 
   // Logique de soumission du formulaire de mot de passe perdu

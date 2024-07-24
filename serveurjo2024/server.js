@@ -27,6 +27,12 @@ const userSchema = new mongoose.Schema({
   username: String,
   email: String,
   password: String,
+  lastName: String,
+  firstName: String,
+  gender: String,
+  bio: String,
+  preferences: String,
+  profilePhoto: String,
   resetToken: String, // Ajoute ce champ pour le token de réinitialisation
 });
 
@@ -72,14 +78,71 @@ app.get("/about", (req, res) => {
     path.join("C:/Users/juan_/Documents/Paris2024/jo2024", "about.html")
   );
 });
+app.get("/api/user/:username", async (req, res) => {
+  const { username } = req.params;
+
+  try {
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ error: "Utilisateur non trouvé." });
+    }
+
+    res.status(200).json({
+      username: user.username,
+      email: user.email,
+      lastName: user.lastName,
+      firstName: user.firstName,
+      gender: user.gender,
+      age: user.age,
+      preferences: user.preferences,
+      profilePhoto: user.profilePhoto,
+      bio: user.bio,
+    });
+  } catch (err) {
+    console.error(
+      "Erreur lors de la récupération des informations de l'utilisateur:",
+      err
+    );
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
+app.get("/api/users", async (req, res) => {
+  try {
+    const users = await User.find({});
+    res.status(200).json(users);
+  } catch (err) {
+    console.error("Erreur lors de la récupération des utilisateurs:", err);
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
 
 // Route pour gérer l'inscription
 app.post("/api/register", async (req, res) => {
-  const { username, email, password } = req.body;
+  const {
+    username,
+    email,
+    password,
+    lastName,
+    firstName,
+    gender,
+    bio,
+    preferences,
+    profilePhoto,
+  } = req.body;
   console.log("Tentative d'inscription pour:", username, email);
 
   // Vérifications des données
-  if (!username || !email || !password) {
+  if (
+    !username ||
+    !email ||
+    !password ||
+    !lastName ||
+    !firstName ||
+    !gender ||
+    !bio ||
+    !preferences ||
+    !profilePhoto
+  ) {
     return res.status(400).json({ message: "Tous les champs sont requis." });
   }
   if (!validateEmail(email)) {
@@ -97,7 +160,17 @@ app.post("/api/register", async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Enregistrer l'utilisateur dans la base de données
-    const newUser = new User({ username, email, password: hashedPassword });
+    const newUser = new User({
+      username,
+      email,
+      password: hashedPassword,
+      lastName,
+      firstName,
+      gender,
+      bio,
+      preferences,
+      profilePhoto,
+    });
     await newUser.save();
     console.log("Utilisateur enregistré dans la base de données");
 
@@ -204,6 +277,12 @@ app.post("/api/login", async (req, res) => {
       message: "Connexion réussie",
       username: user.username,
       email: user.email,
+      lastName: user.lastName,
+      firstName: user.firstName,
+      gender: user.gender,
+      bio: user.bio,
+      preferences: user.preferences,
+      profilePhoto: user.profilePhoto,
     });
   } catch (err) {
     console.error("Erreur lors de la connexion:", err);
@@ -216,6 +295,123 @@ function validateEmail(email) {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return re.test(String(email).toLowerCase());
 }
+app.post("/api/updateProfile", async (req, res) => {
+  const {
+    username,
+    email,
+    lastName,
+    firstName,
+    age,
+    gender,
+    preferences,
+    profilePhoto,
+    bio,
+  } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: "Utilisateur non trouvé." });
+    }
+    user.username = username;
+    user.lastName = lastName;
+    user.firstName = firstName;
+    user.age = age;
+    user.gender = gender;
+    user.preferences = preferences;
+    user.profilePhoto = profilePhoto;
+    user.bio = bio;
+
+    await user.save();
+
+    res.status(200).json({ message: "Profil mis à jour avec succès." });
+  } catch (err) {
+    console.error("Erreur lors de la mise à jour du profil:", err);
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
+app.post("/api/updateFriendProfile", async (req, res) => {
+  const {
+    username,
+    email,
+    lastName,
+    firstName,
+    age,
+    gender,
+    preferences,
+    profilePhoto,
+    bio,
+  } = req.body;
+
+  try {
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ error: "Utilisateur non trouvé." });
+    }
+
+    user.email = email;
+    user.lastName = lastName;
+    user.firstName = firstName;
+    user.age = age;
+    user.gender = gender;
+    user.preferences = preferences;
+    user.profilePhoto = profilePhoto;
+    user.bio = bio;
+
+    await user.save();
+
+    res
+      .status(200)
+      .json({ message: "Profil de l'utilisateur mis à jour avec succès." });
+  } catch (err) {
+    console.error(
+      "Erreur lors de la mise à jour du profil de l'utilisateur:",
+      err
+    );
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
+app.delete("/api/deleteProfile", async (req, res) => {
+  const { username } = req.body;
+
+  try {
+    const user = await User.findOneAndDelete({ username });
+    if (!user) {
+      return res.status(404).json({ error: "Utilisateur non trouvé." });
+    }
+
+    res.status(200).json({ message: "Profil supprimé avec succès." });
+  } catch (err) {
+    console.error("Erreur lors de la suppression du profil:", err);
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
+app.delete("/api/deleteFriendProfile", async (req, res) => {
+  const { username } = req.body;
+
+  try {
+    const user = await User.findOneAndDelete({ username });
+    if (!user) {
+      return res.status(404).json({ error: "Utilisateur non trouvé." });
+    }
+
+    res.status(200).json({ message: "Profil supprimé avec succès." });
+  } catch (err) {
+    console.error("Erreur lors de la suppression du profil:", err);
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
+app.delete("/api/deleteAllProfiles", async (req, res) => {
+  try {
+    await User.deleteMany({});
+    res
+      .status(200)
+      .json({ message: "Tous les profils ont été supprimés avec succès." });
+  } catch (err) {
+    console.error("Erreur lors de la suppression de tous les profils:", err);
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
 
 app.listen(port, () => {
   console.log(`Serveur en écoute sur http://localhost:${port}`);
