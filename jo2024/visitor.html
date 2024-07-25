@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Accueil - Réseau Social JO 2024</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Bienvenue sur le Réseau Social des Jeux Olympiques 2024</h1>
+      <p>
+        Connectez-vous ou inscrivez-vous pour rejoindre notre communauté et
+        partager votre passion pour les Jeux Olympiques 2024.
+      </p>
+      <div class="form-container">
+        <div class="form-box">
+          <h2>Connexion</h2>
+          <form id="loginForm">
+            <input
+              type="text"
+              id="loginUsername"
+              placeholder="Nom d'utilisateur"
+              required
+            />
+            <input
+              type="password"
+              id="loginPassword"
+              placeholder="Mot de passe"
+              required
+            />
+            <button type="submit">Se connecter</button>
+          </form>
+        </div>
+        <div class="form-box">
+          <h2>Inscription</h2>
+          <a href="register.html">S'inscrire</a>
+        </div>
+      </div>
+      <a href="about.html" class="back-link">À propos</a>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="scripts.js"></script>
+  </body>
+</html>

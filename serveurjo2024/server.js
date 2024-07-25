@@ -106,15 +106,6 @@ app.get("/api/user/:username", async (req, res) => {
     res.status(500).json({ error: "Erreur du serveur." });
   }
 });
-app.get("/api/users", async (req, res) => {
-  try {
-    const users = await User.find({});
-    res.status(200).json(users);
-  } catch (err) {
-    console.error("Erreur lors de la récupération des utilisateurs:", err);
-    res.status(500).json({ error: "Erreur du serveur." });
-  }
-});
 
 // Route pour gérer l'inscription
 app.post("/api/register", async (req, res) => {

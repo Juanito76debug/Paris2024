@@ -88,6 +88,64 @@ window.onload = function () {
         });
     });
 
+  $(document).ready(function () {
+    // Logique de soumission du formulaire de connexion
+    $("#loginForm").on("submit", function (event) {
+      event.preventDefault();
+      const username = $("#loginUsername").val();
+      const password = $("#loginPassword").val();
+
+      $.ajax({
+        url: "http://localhost:3000/api/login",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ username, password }),
+        success: function (data) {
+          if (data.error) {
+            alert(data.error);
+          } else {
+            // Stocke les informations de l'utilisateur dans le stockage local
+            localStorage.setItem("username", data.username);
+            localStorage.setItem("email", data.email);
+            localStorage.setItem("userType", data.userType); // Stocke le type d'utilisateur
+            // Redirige vers la page de profil après une connexion réussie
+            window.location.href = "profile.html";
+          }
+        },
+        error: function (error) {
+          console.error("Error:", error);
+          alert("Une erreur s'est produite. Veuillez réessayer.");
+        },
+      });
+    });
+    $("#registerForm").on("submit", function (event) {
+      event.preventDefault();
+      const username = $("#registerUsername").val();
+      const email = $("#registerEmail").val();
+      const password = $("#registerPassword").val();
+
+      $.ajax({
+        url: "http://localhost:3000/api/register",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ username, email, password }),
+        success: function (data) {
+          if (data.error) {
+            alert(data.error);
+          } else {
+            alert("Inscription réussie. Veuillez vous connecter.");
+            // Redirige vers la page de connexion après une inscription réussie
+            window.location.href = "index.html";
+          }
+        },
+        error: function (error) {
+          console.error("Error:", error);
+          alert("Une erreur s'est produite. Veuillez réessayer.");
+        },
+      });
+    });
+  });
+
   // Fonction pour valider l'email
   function validateEmail(email) {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -203,10 +261,121 @@ window.onload = function () {
             alert("Une erreur s'est produite. Veuillez réessayer.");
           });
       });
+    if (window.location.pathname.endsWith("member-profile.html")) {
+      const username = localStorage.getItem("username");
+      const email = localStorage.getItem("email");
+      const lastName = localStorage.getItem("lastName");
+      const firstName = localStorage.getItem("firstName");
+      const age = localStorage.getItem("age");
+      const gender = localStorage.getItem("gender");
+      const preferences = localStorage.getItem("preferences");
+      const profilePhoto = localStorage.getItem("profilePhoto");
+      const bio = localStorage.getItem("bio");
 
+      if (username && email) {
+        document.getElementById("username").textContent = username;
+        document.getElementById("email").textContent = email;
+        document.getElementById("lastName").textContent = lastName;
+        document.getElementById("firstName").textContent = firstName;
+        document.getElementById("age").textContent = age;
+        document.getElementById("gender").textContent = gender;
+        document.getElementById("preferences").textContent = preferences;
+        document.getElementById("profilePhoto").src = profilePhoto;
+        document.getElementById("bio").textContent = bio;
+
+        // Pré-remplir le formulaire de modification avec les informations actuelles
+        document.getElementById("editUsername").value = username;
+        document.getElementById("editEmail").value = email;
+        document.getElementById("editLastName").value = lastName;
+        document.getElementById("editFirstName").value = firstName;
+        document.getElementById("editAge").value = age;
+        document.getElementById("editGender").value = gender;
+        document.getElementById("editPreferences").value = preferences;
+        document.getElementById("editProfilePhoto").value = profilePhoto;
+        document.getElementById("editBio").value = bio;
+      } else {
+        // Redirige vers la page de connexion si les informations de l'utilisateur ne sont pas disponibles
+        window.location.href = "login.html";
+      }
+
+      // Logique de soumission du formulaire de modification du profil
+      document
+        .getElementById("editProfileForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          const updatedProfile = {
+            username: document.getElementById("editUsername").value,
+            email: document.getElementById("editEmail").value,
+            lastName: document.getElementById("editLastName").value,
+            firstName: document.getElementById("editFirstName").value,
+            age: document.getElementById("editAge").value,
+            gender: document.getElementById("editGender").value,
+            preferences: document.getElementById("editPreferences").value,
+            profilePhoto: document.getElementById("editProfilePhoto").value,
+            bio: document.getElementById("editBio").value,
+          };
+
+          fetch("http://localhost:3000/api/updateProfile", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(updatedProfile),
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error("Network response was not ok");
+              }
+              return response.json();
+            })
+            .then((data) => {
+              if (data.error) {
+                alert(data.error);
+              } else {
+                // Mettre à jour les informations dans le stockage local
+                localStorage.setItem("username", updatedProfile.username);
+                localStorage.setItem("email", updatedProfile.email);
+                localStorage.setItem("lastName", updatedProfile.lastName);
+                localStorage.setItem("firstName", updatedProfile.firstName);
+                localStorage.setItem("age", updatedProfile.age);
+                localStorage.setItem("gender", updatedProfile.gender);
+                localStorage.setItem("preferences", updatedProfile.preferences);
+                localStorage.setItem(
+                  "profilePhoto",
+                  updatedProfile.profilePhoto
+                );
+                localStorage.setItem("bio", updatedProfile.bio);
+
+                // Mettre à jour l'affichage des informations du profil
+                document.getElementById("username").textContent =
+                  updatedProfile.username;
+                document.getElementById("email").textContent =
+                  updatedProfile.email;
+                document.getElementById("lastName").textContent =
+                  updatedProfile.lastName;
+                document.getElementById("firstName").textContent =
+                  updatedProfile.firstName;
+                document.getElementById("age").textContent = updatedProfile.age;
+                document.getElementById("gender").textContent =
+                  updatedProfile.gender;
+                document.getElementById("preferences").textContent =
+                  updatedProfile.preferences;
+                document.getElementById("profilePhoto").src =
+                  updatedProfile.profilePhoto;
+                document.getElementById("bio").textContent = updatedProfile.bio;
+
+                alert("Profil mis à jour avec succès !");
+              }
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              alert("Une erreur s'est produite. Veuillez réessayer.");
+            });
+        });
+    }
     // Logique de soumission du formulaire de recherche
     document
-      .getElementById("searchForm")
+      .getElementById("searchFriendForm")
       .addEventListener("submit", function (event) {
         event.preventDefault();
         const searchUsername = document.getElementById("searchUsername").value;
@@ -222,17 +391,20 @@ window.onload = function () {
             if (data.error) {
               alert(data.error);
             } else {
-              document.getElementById("friendUsername").value = data.username;
-              document.getElementById("friendEmail").value = data.email;
-              document.getElementById("friendLastName").value = data.lastName;
-              document.getElementById("friendFirstName").value = data.firstName;
-              document.getElementById("friendAge").value = data.age;
-              document.getElementById("friendGender").value = data.gender;
-              document.getElementById("friendPreferences").value =
+              document.getElementById("friendUsername").textContent =
+                data.username;
+              document.getElementById("friendEmail").textContent = data.email;
+              document.getElementById("friendLastName").textContent =
+                data.lastName;
+              document.getElementById("friendFirstName").textContent =
+                data.firstName;
+              document.getElementById("friendAge").textContent = data.age;
+              document.getElementById("friendGender").textContent = data.gender;
+              document.getElementById("friendPreferences").textContent =
                 data.preferences;
-              document.getElementById("friendProfilePhoto").value =
+              document.getElementById("friendProfilePhoto").src =
                 data.profilePhoto;
-              document.getElementById("friendBio").value = data.bio;
+              document.getElementById("friendBio").textContent = data.bio;
               document.getElementById("friendProfile").style.display = "block";
             }
           })
