@@ -103,6 +103,54 @@ button {
 button:hover {
   background-color: #0056b3;
 }
+.profile-info {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.profile-photo {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  margin-top: 20px;
+}
+
+/* Styles pour les messages publiés */
+.posts {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 20px;
+  text-align: center; /* Centrer le texte */
+}
+
+#messagesList,
+#friendMessagesList {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centrer les messages */
+}
+
+.message {
+  background-color: #f9f9f9;
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 500px; /* Ajuste la largeur maximale des messages */
+  text-align: left; /* Texte aligné à gauche à l'intérieur des messages */
+}
 
 /* Media queries pour les écrans de bureau */
 @media (min-width: 1024px) {
