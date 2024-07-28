@@ -20,11 +20,13 @@
         <p>Présentation : <span id="bio"></span></p>
         <img
           id="profilePhoto"
-          src=""
+          src="assets/Elena.png"
           alt="Photo de profil"
           class="profile-photo"
         />
       </div>
+
+      <!-- Formulaire de modification du profil -->
       <div class="form-container">
         <div class="form-box">
           <h2>Modifier le profil</h2>
@@ -34,6 +36,7 @@
               id="editUsername"
               placeholder="Pseudonyme"
               required
+              autocomplete="off"
             />
             <input type="text" id="editLastName" placeholder="Nom" required />
             <input
@@ -66,10 +69,305 @@
           </form>
         </div>
       </div>
-      <a href="index.html" class="back-link">Retour à l'accueil</a>
-      <button id="logoutButton">Déconnexion</button>
+
+      <!-- Conteneur pour afficher les messages publiés sur le profil de l'utilisateur -->
+      <div class="messages-container">
+        <h2>Messages sur votre profil</h2>
+        <div id="userMessagesList" class="messages-list"></div>
+      </div>
+
+      <!-- Formulaire de réponse à un message -->
+      <div class="form-container">
+        <div class="form-box">
+          <h2>Répondre au message</h2>
+          <form id="replyMessageForm">
+            <textarea
+              id="replyContent"
+              placeholder="Écrire une réponse..."
+              required
+            ></textarea>
+
+            <button type="submit">Répondre</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Formulaire de publication de message pour l'ami -->
+      <div class="form-container">
+        <div class="form-box">
+          <h2>Écrire un message sur le profil de l'ami</h2>
+          <form id="friendPostForm">
+            <textarea
+              id="friendPostContent"
+              placeholder="Écrire un message..."
+              required
+            ></textarea>
+            <button type="submit">Publier sur le profil de l'ami</button>
+          </form>
+          <!-- Liste des messages publiés sur le profil de l'ami -->
+          <div id="friendMessagesList" class="messages-list"></div>
+        </div>
+      </div>
+
+      <!-- Formulaire de réponse aux messages publiés sur le profil de l'ami -->
+      <div id="replyFormTemplate" class="reply-form" style="display: none">
+        <h2>Répondre au message</h2>
+        <textarea
+          class="replyContent"
+          placeholder="Écrire une réponse..."
+          required
+        ></textarea>
+        <button class="submitReply">Envoyer la réponse</button>
+      </div>
+
+      <div class="form-container">
+        <div class="form-box">
+          <h2>Profil de l'Ami</h2>
+          <p>Pseudonyme : <span id="friendUsername"></span></p>
+          <p>Nom : <span id="friendLastName"></span></p>
+          <p>Prénom : <span id="friendFirstName"></span></p>
+          <p>Email : <span id="friendEmail"></span></p>
+          <p>Genre : <span id="friendGender"></span></p>
+          <p>Âge : <span id="friendAge"></span></p>
+          <p>Préférences : <span id="friendPreferences"></span></p>
+          <p>Présentation : <span id="friendBio"></span></p>
+          <img
+            id="friendProfilePhoto"
+            src="assets/Myriam.png"
+            alt="Photo de profil"
+            class="profile-photo"
+          />
+        </div>
+      </div>
+      <a href="index.html" class="button back-link">Retour à l'accueil</a>
+      <button id="logoutButton" class="logout-button">Déconnexion</button>
     </div>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="scripts.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", async function () {
+        // Fonction pour mettre à jour le profil
+        const form = document.getElementById("editProfileForm");
+        form.addEventListener("submit", async function (event) {
+          event.preventDefault(); // Empêche l'envoi du formulaire par défaut
+
+          // Récupère les valeurs des champs du formulaire
+          const username = document.getElementById("editUsername").value;
+          const lastName = document.getElementById("editLastName").value;
+          const firstName = document.getElementById("editFirstName").value;
+          const email = document.getElementById("editEmail").value;
+          const gender = document.getElementById("editGender").value;
+          const age = document.getElementById("editAge").value;
+          const preferences = document.getElementById("editPreferences").value;
+          const bio = document.getElementById("editBio").value;
+          const profilePhoto =
+            document.getElementById("editProfilePhoto").value;
+
+          // Envoi des données au serveur pour mettre à jour le profil
+          try {
+            const response = await fetch(
+              "http://localhost:3000/api/updateProfile",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  username,
+                  lastName,
+                  firstName,
+                  email,
+                  gender,
+                  age,
+                  preferences,
+                  bio,
+                  profilePhoto,
+                }),
+              }
+            );
+
+            if (!response.ok)
+              throw new Error("Erreur lors de la mise à jour du profil");
+
+            const data = await response.json();
+
+            // Mise à jour de l'interface utilisateur
+            document.getElementById("username").textContent = username;
+            document.getElementById("lastName").textContent = lastName;
+            document.getElementById("firstName").textContent = firstName;
+            document.getElementById("email").textContent = email;
+            document.getElementById("gender").textContent = gender;
+            document.getElementById("age").textContent = age;
+            document.getElementById("preferences").textContent = preferences;
+            document.getElementById("bio").textContent = bio;
+            document.getElementById("profilePhoto").src = profilePhoto;
+          } catch (error) {
+            console.error("Erreur:", error);
+            alert(
+              "Une erreur s'est produite lors de la mise à jour du profil."
+            );
+          }
+        });
+
+        // Fonction pour publier un message sur le profil de l'ami
+        const friendPostForm = document.getElementById("friendPostForm");
+        friendPostForm.addEventListener("submit", async function (event) {
+          event.preventDefault();
+          const postContentForFriend =
+            document.getElementById("friendPostContent").value;
+
+          try {
+            const response = await fetch(
+              "http://localhost:3000/api/postMessageForFriend",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ content: postContentForFriend }),
+              }
+            );
+
+            if (!response.ok)
+              throw new Error("Erreur lors de la publication du message");
+
+            const data = await response.json();
+
+            if (data.error) {
+              alert(data.error);
+            } else {
+              // Ajouter le message à la liste des messages de l'ami
+              const friendMessagesList =
+                document.getElementById("friendMessagesList");
+              const messageItem = document.createElement("div");
+              messageItem.textContent = postContentForFriend;
+              messageItem.dataset.messageId = data.messageId; // Associer l'ID du message
+
+              // Ajouter un bouton de suppression au message
+              const deleteButton = document.createElement("button");
+              deleteButton.textContent = "Supprimer";
+              deleteButton.classList.add("delete-message-button");
+              deleteButton.dataset.messageId = data.messageId;
+
+              deleteButton.addEventListener("click", async function () {
+                const messageId = this.dataset.messageId;
+                try {
+                  const response = await fetch(
+                    `http://localhost:3000/api/deleteMessage/${messageId}`,
+                    {
+                      method: "DELETE",
+                    }
+                  );
+
+                  if (!response.ok)
+                    throw new Error("Erreur lors de la suppression du message");
+
+                  const data = await response.json();
+
+                  if (data.error) {
+                    alert(data.error);
+                  } else {
+                    messageItem.remove(); // Supprimer le message de la liste
+                  }
+                } catch (error) {
+                  console.error("Erreur:", error);
+                  alert(
+                    "Une erreur s'est produite lors de la suppression du message."
+                  );
+                }
+              });
+
+              messageItem.appendChild(deleteButton);
+              friendMessagesList.appendChild(messageItem);
+
+              // Réinitialiser le formulaire
+              document.getElementById("friendPostForm").reset();
+
+              // Charger les messages existants et les ajouter au sélecteur
+              try {
+                const response = await fetch(
+                  "http://localhost:3000/api/getMessages"
+                );
+                const data = await response.json();
+
+                const userMessagesList =
+                  document.getElementById("userMessagesList");
+                const messageSelect = document.getElementById("messageSelect");
+
+                userMessagesList.innerHTML = ""; // Nettoyer la liste avant d'ajouter de nouveaux messages
+                messageSelect.innerHTML =
+                  '<option value="">Sélectionnez un message</option>'; // Réinitialiser le sélecteur
+
+                data.messages.forEach((message) => {
+                  // Ajouter le message à la liste des messages
+                  const messageItem = document.createElement("div");
+                  messageItem.textContent = message.content;
+                  messageItem.dataset.messageId = message.id;
+                  userMessagesList.appendChild(messageItem);
+
+                  // Ajouter le message au sélecteur pour les réponses
+                  const option = document.createElement("option");
+                  option.value = message.id;
+                  option.textContent = message.content;
+                  messageSelect.appendChild(option);
+                });
+              } catch (error) {
+                console.error("Erreur:", error);
+                alert(
+                  "Une erreur s'est produite lors du chargement des messages."
+                );
+              }
+            }
+          } catch (error) {
+            console.error("Erreur:", error);
+            alert(
+              "Une erreur s'est produite lors de la publication du message."
+            );
+          }
+        });
+
+        // Fonction pour répondre à un message
+        const replyMessageForm = document.getElementById("replyMessageForm");
+        replyMessageForm.addEventListener("submit", async function (event) {
+          event.preventDefault();
+          const messageId = document.getElementById("messageSelect").value;
+          const replyContent = document.getElementById("replyContent").value;
+
+          try {
+            const response = await fetch(
+              "http://localhost:3000/api/replyMessage",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  messageId,
+                  content: replyContent,
+                }),
+              }
+            );
+
+            if (!response.ok)
+              throw new Error("Erreur lors de la réponse au message");
+
+            const data = await response.json();
+
+            if (data.error) {
+              alert(data.error);
+            } else {
+              // Réinitialiser le formulaire
+              document.getElementById("replyMessageForm").reset();
+              alert("Réponse publiée avec succès.");
+            }
+          } catch (error) {
+            console.error("Erreur:", error);
+            alert(
+              "Une erreur s'est produite lors de la publication de la réponse."
+            );
+          }
+        });
+      });
+    </script>
   </body>
 </html>

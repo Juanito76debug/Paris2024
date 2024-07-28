@@ -317,31 +317,23 @@ window.onload = function () {
           if (data.error) {
             alert(data.error);
           } else {
-            document.getElementById("userUsername").textContent = data.username;
-            document.getElementById("userEmail").textContent = data.email;
-            document.getElementById("userLastName").textContent = data.lastName;
-            document.getElementById("userFirstName").textContent =
+            // Affiche les informations du profil de l'utilisateur
+            document.getElementById("friendUsername").textContent =
+              data.username;
+            document.getElementById("friendEmail").textContent = data.email;
+            document.getElementById("friendLastName").textContent =
+              data.lastName;
+            document.getElementById("friendFirstName").textContent =
               data.firstName;
-            document.getElementById("userAge").textContent = data.age;
-            document.getElementById("userGender").textContent = data.gender;
-            document.getElementById("userPreferences").textContent =
+            document.getElementById("friendAge").textContent = data.age;
+            document.getElementById("friendGender").textContent = data.gender;
+            document.getElementById("friendPreferences").textContent =
               data.preferences;
-            document.getElementById("userProfilePhoto").src = data.profilePhoto;
-            document.getElementById("userBio").textContent = data.bio;
-            document.getElementById("userProfile").style.display = "block";
-
-            // Pré-remplir le formulaire de modification avec les informations actuelles
-            document.getElementById("editUserUsername").value = data.username;
-            document.getElementById("editUserEmail").value = data.email;
-            document.getElementById("editUserLastName").value = data.lastName;
-            document.getElementById("editUserFirstName").value = data.firstName;
-            document.getElementById("editUserAge").value = data.age;
-            document.getElementById("editUserGender").value = data.gender;
-            document.getElementById("editUserPreferences").value =
-              data.preferences;
-            document.getElementById("editUserProfilePhoto").value =
+            document.getElementById("friendProfilePhoto").src =
               data.profilePhoto;
-            document.getElementById("editUserBio").value = data.bio;
+            document.getElementById("friendBio").textContent = data.bio;
+            document.getElementById("friendProfileInfo").style.display =
+              "block";
           }
         })
         .catch((error) => {
@@ -570,6 +562,13 @@ window.onload = function () {
       // Supprime les informations de l'utilisateur du stockage local
       localStorage.removeItem("username");
       localStorage.removeItem("email");
+      localStorage.removeItem("lastName");
+      localStorage.removeItem("firstName");
+      localStorage.removeItem("age");
+      localStorage.removeItem("gender");
+      localStorage.removeItem("preferences");
+      localStorage.removeItem("profilePhoto");
+      localStorage.removeItem("bio");
       localStorage.removeItem("userType");
 
       // Redirige vers la page de connexion après la déconnexion
@@ -770,43 +769,35 @@ window.onload = function () {
       });
 
     // Logique de soumission du formulaire de réponse
-    document.addEventListener("submit", function (event) {
-      if (event.target.classList.contains("replyForm")) {
+    $(document).ready(function () {
+      $("#submitReply").click(function (event) {
         event.preventDefault();
-        const replyContent = event.target.querySelector(".replyContent").value;
-        const messageId = event.target.closest("div").dataset.messageId;
+        const replyContent = $("#replyContent").val();
+        const messageId = $("#replyForm").data("message-id");
 
-        fetch("http://localhost:3000/api/replyMessage", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ messageId, content: replyContent }),
-        })
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error("Network response was not ok");
-            }
-            return response.json();
-          })
-          .then((data) => {
+        $.ajax({
+          type: "POST",
+          url: "http://localhost:3000/api/replyMessage",
+          data: JSON.stringify({ messageId, content: replyContent }),
+          contentType: "application/json",
+          success: function (data) {
             if (data.error) {
               alert(data.error);
             } else {
-              // Ajouter la réponse sous le message
-              const replyItem = document.createElement("div");
-              replyItem.textContent = replyContent;
-              event.target.closest("div").appendChild(replyItem);
-
-              // Réinitialiser le formulaire de réponse
-              event.target.reset();
+              const replyItem = $('<div class="reply-item"></div>').text(
+                replyContent
+              );
+              $(`[data-message-id="${messageId}"]`).append(replyItem);
+              $("#replyForm").hide();
+              $("#replyForm")[0].reset();
             }
-          })
-          .catch((error) => {
+          },
+          error: function (error) {
             console.error("Error:", error);
             alert("Une erreur s'est produite. Veuillez réessayer.");
-          });
-      }
+          },
+        });
+      });
     });
 
     // Logique de soumission du formulaire de publication de message sur le profil de l'ami
@@ -814,42 +805,43 @@ window.onload = function () {
       .getElementById("friendPostForm")
       .addEventListener("submit", function (event) {
         event.preventDefault();
-        const friendPostContent =
-          document.getElementById("friendPostContent").value;
+        const friendPostContentElement =
+          document.getElementById("friendPostContent");
+        if (friendPostContentElement) {
+          const friendPostContent = friendPostContentElement.value;
 
-        fetch("http://localhost:3000/api/postMessageToFriend", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ content: friendPostContent }),
-        })
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error("Network response was not ok");
-            }
-            return response.json();
+          fetch("http://localhost:3000/api/postMessageToFriend", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ content: friendPostContent }),
           })
-          .then((data) => {
-            if (data.error) {
-              alert(data.error);
-            } else {
-              // Ajouter le message à la liste des messages du profil de l'ami
-              const friendMessagesList =
-                document.getElementById("friendMessagesList");
-              const friendMessageItem = document.createElement("div");
-              friendMessageItem.textContent = friendPostContent;
-              friendMessageItem.dataset.messageId = data.messageId; // Associer l'ID du message
-              friendMessagesList.appendChild(friendMessageItem);
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error("Network response was not ok");
+              }
+              return response.json();
+            })
+            .then((data) => {
+              if (data.error) {
+                alert(data.error);
+              } else {
+                const friendMessagesList =
+                  document.getElementById("friendMessagesList");
+                const friendMessageItem = document.createElement("div");
+                friendMessageItem.textContent = friendPostContent;
+                friendMessageItem.dataset.messageId = data.messageId;
+                friendMessagesList.appendChild(friendMessageItem);
 
-              // Réinitialiser le formulaire
-              document.getElementById("friendPostForm").reset();
-            }
-          })
-          .catch((error) => {
-            console.error("Error:", error);
-            alert("Une erreur s'est produite. Veuillez réessayer.");
-          });
+                document.getElementById("friendPostForm").reset();
+              }
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              alert("Une erreur s'est produite. Veuillez réessayer.");
+            });
+        }
       });
 
     // Logique de soumission du formulaire de réponse sur le profil de l'ami
@@ -979,36 +971,329 @@ window.onload = function () {
           alert("Une erreur s'est produite. Veuillez réessayer.");
         });
     });
-  document.addEventListener("click", function (event) {
-    if (event.target.classList.contains("deleteButton")) {
-      const messageId = event.target.closest(".message-item").dataset.messageId;
+  $(document).ready(function () {
+    $(document).on("click", ".deleteButton", function () {
+      const messageId = $(this).closest(".message-item").data("message-id");
 
-      fetch("http://localhost:3000/api/deleteAdminMessage", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ messageId }),
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("Network response was not ok");
-          }
-          return response.json();
-        })
-        .then((data) => {
+      $.ajax({
+        type: "DELETE",
+        url: "http://localhost:3000/api/deleteMessage",
+        data: JSON.stringify({ messageId }),
+        contentType: "application/json",
+        success: function (data) {
           if (data.error) {
             alert(data.error);
           } else {
-            // Supprimer le message de l'affichage
-            event.target.closest(".message-item").remove();
+            $(`[data-message-id="${messageId}"]`).remove();
             alert("Message supprimé avec succès !");
           }
-        })
-        .catch((error) => {
+        },
+        error: function (error) {
           console.error("Error:", error);
           alert("Une erreur s'est produite. Veuillez réessayer.");
+        },
+      });
+    });
+  });
+  document.addEventListener("DOMContentLoaded", async function () {
+    // Fonction pour récupérer et afficher les amis confirmés
+    async function fetchConfirmedFriends() {
+      try {
+        const response = await fetch(
+          "http://localhost:3000/api/confirmedFriends"
+        );
+        const friends = await response.json();
+        const friendsList = document.getElementById("friendsList");
+        friendsList.innerHTML = ""; // Vider la liste avant de la remplir
+
+        friends.forEach((friend) => {
+          const listItem = document.createElement("li");
+          listItem.innerHTML = `
+            <img src="${friend.profilePhoto}" alt="Photo de ${friend.username}" class="friend-photo" />
+            <p>Pseudonyme : ${friend.username}</p>
+            <p>Nom : ${friend.lastName}</p>
+            <p>Prénom : ${friend.firstName}</p>
+          `;
+          friendsList.appendChild(listItem);
         });
+      } catch (error) {
+        console.error(
+          "Erreur lors de la récupération des amis confirmés:",
+          error
+        );
+        alert("Une erreur s'est produite. Veuillez réessayer.");
+      }
     }
+
+    // Appeler la fonction pour récupérer et afficher les amis confirmés au chargement de la page
+    fetchConfirmedFriends();
+  });
+  document.addEventListener("DOMContentLoaded", async function () {
+    // Fonction pour récupérer et afficher les amis confirmés
+    async function fetchAdminFriends() {
+      try {
+        const response = await fetch("http://localhost:3000/api/adminFriends");
+        const friends = await response.json();
+        const friendsList = document.getElementById("friendsList");
+        friendsList.innerHTML = ""; // Vider la liste avant de la remplir
+
+        friends.forEach((friend) => {
+          const listItem = document.createElement("li");
+          listItem.innerHTML = `
+            <img src="${friend.profilePhoto}" alt="Photo de ${friend.username}" class="friend-photo" />
+            <p>Pseudonyme : ${friend.username}</p>
+            <p>Nom : ${friend.lastName}</p>
+            <p>Prénom : ${friend.firstName}</p>
+            <button class="remove-friend-button" data-friend-id="${friend._id}">Supprimer</button>
+          `;
+          friendsList.appendChild(listItem);
+        });
+
+        // Ajouter des gestionnaires d'événements pour les boutons de suppression
+        document.querySelectorAll(".remove-friend-button").forEach((button) => {
+          button.addEventListener("click", async function () {
+            const friendId = this.getAttribute("data-friend-id");
+            const adminId = "ID_DE_L_ADMIN"; // Remplacez par l'ID réel de l'administrateur
+
+            try {
+              const response = await fetch(
+                `http://localhost:3000/api/removeFriend/${adminId}/${friendId}`,
+                {
+                  method: "DELETE",
+                }
+              );
+              const result = await response.json();
+
+              if (result.error) {
+                alert(result.error);
+              } else {
+                alert("Ami supprimé avec succès.");
+                fetchAdminFriends(); // Rafraîchir la liste des amis
+              }
+            } catch (error) {
+              console.error("Erreur lors de la suppression de l'ami:", error);
+              alert("Une erreur s'est produite. Veuillez réessayer.");
+            }
+          });
+        });
+      } catch (error) {
+        console.error(
+          "Erreur lors de la récupération des amis confirmés:",
+          error
+        );
+        alert("Une erreur s'est produite. Veuillez réessayer.");
+      }
+    }
+
+    // Appeler la fonction pour récupérer et afficher les amis confirmés au chargement de la page
+    fetchAdminFriends();
+  });
+  document.addEventListener("DOMContentLoaded", async function () {
+    // Fonction pour récupérer et afficher les amis confirmés d'un ami
+    async function fetchFriendFriends(friendId) {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/friendFriends/${friendId}`
+        );
+        const friends = await response.json();
+        const friendFriendsList = document.getElementById("friendFriendsList");
+        friendFriendsList.innerHTML = ""; // Vider la liste avant de la remplir
+
+        friends.forEach((friend) => {
+          const listItem = document.createElement("li");
+          listItem.innerHTML = `
+            <img src="${friend.profilePhoto}" alt="Photo de ${friend.username}" class="friend-photo" />
+            <p>Pseudonyme : ${friend.username}</p>
+            <p>Nom : ${friend.lastName}</p>
+            <p>Prénom : ${friend.firstName}</p>
+          `;
+          friendFriendsList.appendChild(listItem);
+        });
+      } catch (error) {
+        console.error(
+          "Erreur lors de la récupération des amis confirmés de l'ami:",
+          error
+        );
+        alert("Une erreur s'est produite. Veuillez réessayer.");
+      }
+    }
+
+    // Exemple d'appel de la fonction avec un ID d'ami spécifique
+    const friendId = "ID_DE_L_AMI"; // Remplacez par l'ID réel de l'ami
+    fetchFriendFriends(friendId);
+  });
+  document.addEventListener("DOMContentLoaded", async function () {
+    // Fonction pour récupérer et afficher les amis confirmés d'un membre
+    async function fetchMemberFriends(memberId) {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/memberFriends/${memberId}`
+        );
+        const friends = await response.json();
+        const memberFriendsList = document.getElementById("memberFriendsList");
+        memberFriendsList.innerHTML = ""; // Vider la liste avant de la remplir
+
+        friends.forEach((friend) => {
+          const listItem = document.createElement("li");
+          listItem.innerHTML = `
+            <img src="${friend.profilePhoto}" alt="Photo de ${friend.username}" class="friend-photo" />
+            <p>Pseudonyme : ${friend.username}</p>
+            <p>Nom : ${friend.lastName}</p>
+            <p>Prénom : ${friend.firstName}</p>
+            <button class="remove-friend-button" data-friend-id="${friend._id}" data-member-id="${memberId}">Supprimer</button>
+          `;
+          memberFriendsList.appendChild(listItem);
+        });
+
+        // Ajouter des gestionnaires d'événements pour les boutons de suppression
+        document.querySelectorAll(".remove-friend-button").forEach((button) => {
+          button.addEventListener("click", async function () {
+            const friendId = this.getAttribute("data-friend-id");
+            const memberId = this.getAttribute("data-member-id");
+
+            try {
+              const response = await fetch(
+                `http://localhost:3000/api/removeFriend/${memberId}/${friendId}`,
+                {
+                  method: "DELETE",
+                }
+              );
+              const result = await response.json();
+
+              if (result.error) {
+                alert(result.error);
+              } else {
+                alert("Ami supprimé avec succès.");
+                fetchMemberFriends(memberId); // Rafraîchir la liste des amis
+              }
+            } catch (error) {
+              console.error("Erreur lors de la suppression de l'ami:", error);
+              alert("Une erreur s'est produite. Veuillez réessayer.");
+            }
+          });
+        });
+      } catch (error) {
+        console.error(
+          "Erreur lors de la récupération des amis confirmés du membre:",
+          error
+        );
+        alert("Une erreur s'est produite. Veuillez réessayer.");
+      }
+    }
+
+    // Exemple d'appel de la fonction avec un ID de membre spécifique
+    const memberId = "ID_DU_MEMBRE"; // Remplacez par l'ID réel du membre
+    fetchMemberFriends(memberId);
+  });
+  document.addEventListener("DOMContentLoaded", async function () {
+    // Fonction pour récupérer et afficher les demandes d'amis
+    async function fetchFriendRequests() {
+      try {
+        const response = await fetch(
+          "http://localhost:3000/api/friendRequests"
+        );
+        const requests = await response.json();
+        const friendRequestsList =
+          document.getElementById("friendRequestsList");
+        friendRequestsList.innerHTML = ""; // Vider la liste avant de la remplir
+
+        requests.forEach((request) => {
+          const listItem = document.createElement("li");
+          listItem.innerHTML = `
+            <img src="${request.profilePhoto}" alt="Photo de ${request.username}" class="friend-photo" />
+            <p>Pseudonyme : ${request.username}</p>
+            <p>Nom : ${request.lastName}</p>
+            <p>Prénom : ${request.firstName}</p>
+            <button class="add-friend-button" data-member-id="${request._id}">Ajouter</button>
+            <button class="ignore-friend-button" data-member-id="${request._id}">Ignorer</button>
+          `;
+          friendRequestsList.appendChild(listItem);
+        });
+
+        // Ajouter des gestionnaires d'événements pour les boutons d'ajout
+        document.querySelectorAll(".add-friend-button").forEach((button) => {
+          button.addEventListener("click", async function () {
+            const memberId = this.getAttribute("data-member-id");
+            const adminId = "ID_DE_L_ADMIN"; // Remplacez par l'ID réel de l'administrateur
+
+            try {
+              const response = await fetch(
+                `http://localhost:3000/api/addFriend/${adminId}/${memberId}`,
+                {
+                  method: "POST",
+                }
+              );
+              const result = await response.json();
+
+              if (result.error) {
+                alert(result.error);
+              } else {
+                // Afficher le message de confirmation
+                const confirmationMessage = document.getElementById(
+                  "confirmationMessage"
+                );
+                confirmationMessage.style.display = "block";
+                setTimeout(() => {
+                  confirmationMessage.style.display = "none";
+                }, 3000); // Masquer le message après 3 secondes
+
+                // Supprimer l'élément de la liste sans rafraîchir la page
+                this.parentElement.remove();
+              }
+            } catch (error) {
+              console.error("Erreur lors de l'ajout de l'ami:", error);
+              alert("Une erreur s'est produite. Veuillez réessayer.");
+            }
+          });
+        });
+
+        // Ajouter des gestionnaires d'événements pour les boutons d'ignorance
+        document.querySelectorAll(".ignore-friend-button").forEach((button) => {
+          button.addEventListener("click", async function () {
+            const memberId = this.getAttribute("data-member-id");
+            const adminId = "ID_DE_L_ADMIN"; // Remplacez par l'ID réel de l'administrateur
+
+            try {
+              const response = await fetch(
+                `http://localhost:3000/api/ignoreFriendRequest/${adminId}/${memberId}`,
+                {
+                  method: "DELETE",
+                }
+              );
+              const result = await response.json();
+
+              if (result.error) {
+                alert(result.error);
+              } else {
+                // Afficher le message d'ignorance
+                const ignoreMessage = document.getElementById("ignoreMessage");
+                ignoreMessage.style.display = "block";
+                setTimeout(() => {
+                  ignoreMessage.style.display = "none";
+                }, 3000); // Masquer le message après 3 secondes
+
+                // Supprimer l'élément de la liste sans rafraîchir la page
+                this.parentElement.remove();
+              }
+            } catch (error) {
+              console.error(
+                "Erreur lors de l'ignorance de la demande d'ami:",
+                error
+              );
+              alert("Une erreur s'est produite. Veuillez réessayer.");
+            }
+          });
+        });
+      } catch (error) {
+        console.error(
+          "Erreur lors de la récupération des demandes d'amis:",
+          error
+        );
+        alert("Une erreur s'est produite. Veuillez réessayer.");
+      }
+    }
+
+    // Appeler la fonction pour récupérer et afficher les demandes d'amis au chargement de la page
+    fetchFriendRequests();
   });
 };

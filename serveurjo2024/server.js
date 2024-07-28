@@ -34,6 +34,13 @@ const userSchema = new mongoose.Schema({
   preferences: String,
   profilePhoto: String,
   resetToken: String,
+  status: { type: String, default: "Pending" },
+  friends: [
+    {
+      friendId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      status: { type: String, default: "Pending" },
+    },
+  ], // Ajoutez ce champ
 });
 
 const User = mongoose.model("User", userSchema);
@@ -105,6 +112,88 @@ app.get("/api/users", async (req, res) => {
     res.status(200).json(users);
   } catch (err) {
     console.error("Erreur lors de la récupération des profils:", err);
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
+app.get("/api/getMessages", async (req, res) => {
+  try {
+    const messages = await Message.find();
+    res.status(200).json(messages);
+  } catch (err) {
+    console.error("Erreur lors de la récupération des messages:", err);
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
+
+app.get("/api/confirmedFriends", async (req, res) => {
+  try {
+    const confirmedFriends = await User.find(
+      { status: "Confirmé" },
+      "username lastName firstName profilePhoto"
+    );
+    res.status(200).json(confirmedFriends);
+  } catch (err) {
+    console.error("Erreur lors de la récupération des amis confirmés:", err);
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
+app.get("/api/adminFriends", async (req, res) => {
+  try {
+    const adminFriends = await User.find(
+      { status: "Confirmé" },
+      "username lastName firstName profilePhoto"
+    );
+    res.status(200).json(adminFriends);
+  } catch (err) {
+    console.error("Erreur lors de la récupération des amis confirmés:", err);
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
+app.get("/api/friendFriends/:friendId", async (req, res) => {
+  const { friendId } = req.params;
+
+  try {
+    const friend = await User.findById(friendId).populate(
+      "friends",
+      "username lastName firstName profilePhoto"
+    );
+    if (!friend) {
+      return res.status(404).json({ error: "Ami non trouvé." });
+    }
+
+    const confirmedFriends = friend.friends.filter(
+      (f) => f.status === "Confirmé"
+    );
+    res.status(200).json(confirmedFriends);
+  } catch (err) {
+    console.error(
+      "Erreur lors de la récupération des amis confirmés de l'ami:",
+      err
+    );
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
+app.get("/api/memberFriends/:memberId", async (req, res) => {
+  const { memberId } = req.params;
+
+  try {
+    const member = await User.findById(memberId).populate(
+      "friends",
+      "username lastName firstName profilePhoto"
+    );
+    if (!member) {
+      return res.status(404).json({ error: "Membre non trouvé." });
+    }
+
+    const confirmedFriends = member.friends.filter(
+      (f) => f.status === "Confirmé"
+    );
+    res.status(200).json(confirmedFriends);
+  } catch (err) {
+    console.error(
+      "Erreur lors de la récupération des amis confirmés du membre:",
+      err
+    );
     res.status(500).json({ error: "Erreur du serveur." });
   }
 });
@@ -492,18 +581,30 @@ app.post("/api/adminReplyMessage", async (req, res) => {
     res.status(500).json({ error: "Erreur du serveur." });
   }
 });
-app.delete("/api/deleteAdminMessage", async (req, res) => {
-  const { messageId } = req.body;
+app.post("/api/addFriend/:adminId/:memberId", async (req, res) => {
+  const { adminId, memberId } = req.params;
 
   try {
-    const message = await Message.findByIdAndDelete(messageId);
-    if (!message) {
-      return res.status(404).json({ error: "Message non trouvé." });
+    const admin = await User.findById(adminId);
+    const member = await User.findById(memberId);
+
+    if (!admin || !member) {
+      return res
+        .status(404)
+        .json({ error: "Administrateur ou membre non trouvé." });
     }
 
-    res.status(200).json({ message: "Message supprimé avec succès." });
+    // Ajouter l'administrateur à la liste d'amis du membre avec le statut "Confirmé"
+    member.friends.push({ friendId: admin._id, status: "Confirmé" });
+    await member.save();
+
+    // Ajouter le membre à la liste d'amis de l'administrateur avec le statut "Confirmé"
+    admin.friends.push({ friendId: member._id, status: "Confirmé" });
+    await admin.save();
+
+    res.status(200).json({ message: "Ami ajouté avec succès." });
   } catch (err) {
-    console.error("Erreur lors de la suppression du message:", err);
+    console.error("Erreur lors de l'ajout de l'ami:", err);
     res.status(500).json({ error: "Erreur du serveur." });
   }
 });
@@ -522,7 +623,77 @@ app.delete("/api/deleteMessage", async (req, res) => {
     res.status(500).json({ error: "Erreur du serveur." });
   }
 });
+app.delete("/api/removeFriend/:adminId/:friendId", async (req, res) => {
+  const { adminId, friendId } = req.params;
 
+  try {
+    const admin = await User.findById(adminId);
+    if (!admin) {
+      return res.status(404).json({ error: "Administrateur non trouvé." });
+    }
+
+    admin.friends = admin.friends.filter(
+      (friend) => friend.toString() !== friendId
+    );
+    await admin.save();
+
+    res.status(200).json({ message: "Ami supprimé avec succès." });
+  } catch (err) {
+    console.error("Erreur lors de la suppression de l'ami:", err);
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
+app.delete("/api/removeFriend/:memberId/:friendId", async (req, res) => {
+  const { memberId, friendId } = req.params;
+
+  try {
+    const member = await User.findById(memberId);
+    if (!member) {
+      return res.status(404).json({ error: "Membre non trouvé." });
+    }
+
+    member.friends = member.friends.filter(
+      (friend) => friend.toString() !== friendId
+    );
+    await member.save();
+
+    res.status(200).json({ message: "Ami supprimé avec succès." });
+  } catch (err) {
+    console.error("Erreur lors de la suppression de l'ami:", err);
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
+app.delete("/api/ignoreFriendRequest/:adminId/:memberId", async (req, res) => {
+  const { adminId, memberId } = req.params;
+
+  try {
+    const admin = await User.findById(adminId);
+    const member = await User.findById(memberId);
+
+    if (!admin || !member) {
+      return res
+        .status(404)
+        .json({ error: "Administrateur ou membre non trouvé." });
+    }
+
+    // Supprimer le membre de la liste d'amis de l'administrateur
+    admin.friends = admin.friends.filter(
+      (friend) => friend.friendId.toString() !== memberId
+    );
+    await admin.save();
+
+    // Supprimer l'administrateur de la liste d'amis du membre demandeur
+    member.friends = member.friends.filter(
+      (friend) => friend.friendId.toString() !== adminId
+    );
+    await member.save();
+
+    res.status(200).json({ message: "Demande d'ami ignorée avec succès." });
+  } catch (err) {
+    console.error("Erreur lors de l'ignorance de la demande d'ami:", err);
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
 app.listen(port, () => {
   console.log(`Serveur en écoute sur http://localhost:${port}`);
 });

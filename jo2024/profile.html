@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
@@ -83,25 +83,21 @@
         </form>
         <!-- Les messages publiés seront affichés ici -->
         <div id="messagesList"></div>
+        <div class="message-item" data-message-id="123">
+          <p>Contenu du message</p>
+          <button class="deleteButton">Supprimer</button>
+        </div>
       </div>
 
-      <div id="replyForm" class="reply-form" style="display: none">
-        <h2>Répondre au message</h2>
+      <!-- Formulaire de réponse à un message pour les administrateurs -->
+      <div id="replyForm" class="reply-form">
+        <h2>Répondre à un message</h2>
         <textarea
           id="replyContent"
           placeholder="Écrire une réponse..."
           required
         ></textarea>
         <button id="submitReply">Envoyer la réponse</button>
-        <!-- Formulaire de réponse pour les administrateurs -->
-        <form id="adminReplyForm" style="display: none">
-          <textarea
-            id="adminReplyContent"
-            placeholder="Répondre en tant qu'administrateur..."
-            required
-          ></textarea>
-          <button type="submit">Répondre</button>
-        </form>
       </div>
 
       <div class="form-container">
@@ -286,6 +282,60 @@
       <div id="allProfiles" class="profiles-list">
         <h2>Liste de tous les profils</h2>
         <ul id="profilesList"></ul>
+      </div>
+      <div class="friends-container">
+        <h2>Liste d'amis confirmés</h2>
+        <ul id="friendsList">
+          <!-- Exemple d'ami avec bouton de suppression -->
+          <li>
+            <img
+              src="URL_DE_LA_PHOTO"
+              alt="Photo de PSEUDONYME"
+              class="friend-photo"
+            />
+            <p>Pseudonyme : PSEUDONYME</p>
+            <p>Nom : NOM</p>
+            <p>Prénom : PRÉNOM</p>
+            <button class="remove-friend-button" data-friend-id="ID_AMI">
+              Supprimer
+            </button>
+          </li>
+        </ul>
+      </div>
+      <div class="friend-friends-container">
+        <h2>Liste d'amis de l'ami</h2>
+        <ul id="friendFriendsList"></ul>
+      </div>
+      <div class="member-friends-container">
+        <h2>Liste d'amis du membre</h2>
+        <ul id="memberFriendsList">
+          <!-- Exemple d'ami avec bouton de suppression -->
+          <li>
+            <img
+              src="URL_DE_LA_PHOTO"
+              alt="Photo de PSEUDONYME"
+              class="friend-photo"
+            />
+            <p>Pseudonyme : PSEUDONYME</p>
+            <p>Nom : NOM</p>
+            <p>Prénom : PRÉNOM</p>
+            <button class="remove-friend-button" data-friend-id="ID_AMI">
+              Supprimer
+            </button>
+          </li>
+        </ul>
+      </div>
+      <div class="friend-requests-container">
+        <h2>Demandes d'amis</h2>
+        <ul id="friendRequestsList">
+          <!-- Les demandes d'amis seront ajoutées ici dynamiquement -->
+        </ul>
+      </div>
+      <div id="confirmationMessage" style="display: none; color: green">
+        La demande d'ami a été confirmée avec succès.
+      </div>
+      <div id="ignoreMessage" style="display: none; color: red">
+        La demande d'ami a été ignorée.
       </div>
 
       <a href="index.html">Retour à l'accueil</a>
