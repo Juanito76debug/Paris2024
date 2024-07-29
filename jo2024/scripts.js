@@ -996,25 +996,22 @@ window.onload = function () {
     });
   });
   document.addEventListener("DOMContentLoaded", async function () {
-    // Fonction pour récupérer et afficher les amis confirmés
+    // Fonction pour récupérer et afficher les amis confirmés dans la liste de sélection
     async function fetchConfirmedFriends() {
       try {
         const response = await fetch(
           "http://localhost:3000/api/confirmedFriends"
         );
         const friends = await response.json();
-        const friendsList = document.getElementById("friendsList");
-        friendsList.innerHTML = ""; // Vider la liste avant de la remplir
+        const confirmedFriendsSelect =
+          document.getElementById("confirmedFriends");
+        confirmedFriendsSelect.innerHTML = ""; // Vider la liste avant de la remplir
 
         friends.forEach((friend) => {
-          const listItem = document.createElement("li");
-          listItem.innerHTML = `
-            <img src="${friend.profilePhoto}" alt="Photo de ${friend.username}" class="friend-photo" />
-            <p>Pseudonyme : ${friend.username}</p>
-            <p>Nom : ${friend.lastName}</p>
-            <p>Prénom : ${friend.firstName}</p>
-          `;
-          friendsList.appendChild(listItem);
+          const option = document.createElement("option");
+          option.value = friend._id;
+          option.textContent = `${friend.username} (${friend.firstName} ${friend.lastName})`;
+          confirmedFriendsSelect.appendChild(option);
         });
       } catch (error) {
         console.error(
@@ -1026,67 +1023,75 @@ window.onload = function () {
     }
 
     // Appeler la fonction pour récupérer et afficher les amis confirmés au chargement de la page
-    fetchConfirmedFriends();
-  });
-  document.addEventListener("DOMContentLoaded", async function () {
-    // Fonction pour récupérer et afficher les amis confirmés
-    async function fetchAdminFriends() {
-      try {
-        const response = await fetch("http://localhost:3000/api/adminFriends");
-        const friends = await response.json();
-        const friendsList = document.getElementById("friendsList");
-        friendsList.innerHTML = ""; // Vider la liste avant de la remplir
+    document.addEventListener("DOMContentLoaded", async function () {
+      // Fonction pour récupérer et afficher les amis confirmés dans la liste de sélection
+      async function fetchConfirmedFriends() {
+        try {
+          const response = await fetch(
+            "http://localhost:3000/api/confirmedFriends"
+          );
+          const friends = await response.json();
+          const confirmedFriendsSelect =
+            document.getElementById("confirmedFriends");
+          confirmedFriendsSelect.innerHTML = ""; // Vider la liste avant de la remplir
 
-        friends.forEach((friend) => {
-          const listItem = document.createElement("li");
-          listItem.innerHTML = `
-            <img src="${friend.profilePhoto}" alt="Photo de ${friend.username}" class="friend-photo" />
-            <p>Pseudonyme : ${friend.username}</p>
-            <p>Nom : ${friend.lastName}</p>
-            <p>Prénom : ${friend.firstName}</p>
-            <button class="remove-friend-button" data-friend-id="${friend._id}">Supprimer</button>
-          `;
-          friendsList.appendChild(listItem);
-        });
-
-        // Ajouter des gestionnaires d'événements pour les boutons de suppression
-        document.querySelectorAll(".remove-friend-button").forEach((button) => {
-          button.addEventListener("click", async function () {
-            const friendId = this.getAttribute("data-friend-id");
-            const adminId = "ID_DE_L_ADMIN"; // Remplacez par l'ID réel de l'administrateur
-
-            try {
-              const response = await fetch(
-                `http://localhost:3000/api/removeFriend/${adminId}/${friendId}`,
-                {
-                  method: "DELETE",
-                }
-              );
-              const result = await response.json();
-
-              if (result.error) {
-                alert(result.error);
-              } else {
-                alert("Ami supprimé avec succès.");
-                fetchAdminFriends(); // Rafraîchir la liste des amis
-              }
-            } catch (error) {
-              console.error("Erreur lors de la suppression de l'ami:", error);
-              alert("Une erreur s'est produite. Veuillez réessayer.");
-            }
+          friends.forEach((friend) => {
+            const option = document.createElement("option");
+            option.value = friend._id;
+            option.textContent = `${friend.username} (${friend.firstName} ${friend.lastName})`;
+            confirmedFriendsSelect.appendChild(option);
           });
-        });
-      } catch (error) {
-        console.error(
-          "Erreur lors de la récupération des amis confirmés:",
-          error
-        );
-        alert("Une erreur s'est produite. Veuillez réessayer.");
+        } catch (error) {
+          console.error(
+            "Erreur lors de la récupération des amis confirmés:",
+            error
+          );
+          alert("Une erreur s'est produite. Veuillez réessayer.");
+        }
       }
-    }
 
-    // Appeler la fonction pour récupérer et afficher les amis confirmés au chargement de la page
-    fetchAdminFriends();
+      // Appeler la fonction pour récupérer et afficher les amis confirmés au chargement de la page
+      fetchConfirmedFriends();
+
+      // Logique de soumission du formulaire de recommandation d'ami
+      document
+        .getElementById("recommendFriendForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+          const friendId = document.getElementById("confirmedFriends").value;
+          const recommenderId = localStorage.getItem("userId"); // Assure-toi que l'ID de l'utilisateur est stocké dans le localStorage
+
+          try {
+            const response = await fetch(
+              "http://localhost:3000/api/recommendFriend",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ friendId, recommenderId }),
+              }
+            );
+            const result = await response.json();
+
+            if (result.error) {
+              alert(result.error);
+            } else {
+              // Afficher le message de confirmation
+              const recommendationMessage = document.getElementById(
+                "recommendationMessage"
+              );
+              recommendationMessage.style.display = "block";
+              setTimeout(() => {
+                recommendationMessage.style.display = "none";
+              }, 3000); // Masquer le message après 3 secondes
+            }
+          } catch (error) {
+            console.error("Erreur lors de la recommandation de l'ami:", error);
+            alert("Une erreur s'est produite. Veuillez réessayer.");
+          }
+        });
+    });
   });
   document.addEventListener("DOMContentLoaded", async function () {
     // Fonction pour récupérer et afficher les amis confirmés d'un ami

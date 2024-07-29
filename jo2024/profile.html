@@ -1,4 +1,4 @@
-<<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
@@ -336,6 +336,21 @@
       </div>
       <div id="ignoreMessage" style="display: none; color: red">
         La demande d'ami a été ignorée.
+      </div>
+      <div class="form-container">
+        <div class="form-box">
+          <h2>Recommander un ami</h2>
+          <form id="recommendFriendForm">
+            <label for="confirmedFriends">Sélectionner un ami :</label>
+            <select id="confirmedFriends" required>
+              <!-- Les options seront ajoutées dynamiquement -->
+            </select>
+            <button type="submit">Recommander</button>
+          </form>
+          <p id="recommendationMessage" style="display: none; color: green">
+            Recommandation envoyée avec succès !
+          </p>
+        </div>
       </div>
 
       <a href="index.html">Retour à l'accueil</a>
