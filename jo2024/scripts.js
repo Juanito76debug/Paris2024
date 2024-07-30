@@ -300,47 +300,57 @@ window.onload = function () {
   }
 
   // Logique de soumission du formulaire de recherche
-  document
-    .getElementById("searchUserForm")
-    .addEventListener("submit", function (event) {
-      event.preventDefault();
-      const searchUsername = document.getElementById("searchUsername").value;
+  document.addEventListener("DOMContentLoaded", function () {
+    // Logique de soumission du formulaire de recherche d'utilisateur
+    document
+      .getElementById("searchUserForm")
+      .addEventListener("submit", async function (event) {
+        event.preventDefault();
+        const username = document.getElementById("searchUsername").value;
+        const firstName = document.getElementById("searchFirstName").value;
+        const lastName = document.getElementById("searchLastName").value;
 
-      fetch(`http://localhost:3000/api/user/${searchUsername}`)
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("Network response was not ok");
-          }
-          return response.json();
-        })
-        .then((data) => {
-          if (data.error) {
-            alert(data.error);
+        try {
+          const response = await fetch(
+            "http://localhost:3000/api/searchUsers",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ username, firstName, lastName }),
+            }
+          );
+          const results = await response.json();
+
+          const searchResults = document.getElementById("searchResults");
+          searchResults.innerHTML = ""; // Vider les résultats avant de les remplir
+
+          if (results.length === 0) {
+            searchResults.textContent = "Aucun utilisateur trouvé.";
           } else {
-            // Affiche les informations du profil de l'utilisateur
-            document.getElementById("friendUsername").textContent =
-              data.username;
-            document.getElementById("friendEmail").textContent = data.email;
-            document.getElementById("friendLastName").textContent =
-              data.lastName;
-            document.getElementById("friendFirstName").textContent =
-              data.firstName;
-            document.getElementById("friendAge").textContent = data.age;
-            document.getElementById("friendGender").textContent = data.gender;
-            document.getElementById("friendPreferences").textContent =
-              data.preferences;
-            document.getElementById("friendProfilePhoto").src =
-              data.profilePhoto;
-            document.getElementById("friendBio").textContent = data.bio;
-            document.getElementById("friendProfileInfo").style.display =
-              "block";
+            results.forEach((user) => {
+              const userItem = document.createElement("div");
+              userItem.innerHTML = `
+              <p>Pseudonyme : ${user.username}</p>
+              <p>Nom : ${user.lastName}</p>
+              <p>Prénom : ${user.firstName}</p>
+              <p>Email : ${user.email}</p>
+              <p>Genre : ${user.gender}</p>
+              <p>Âge : ${user.age}</p>
+              <p>Préférences : ${user.preferences}</p>
+              <p>Présentation : ${user.bio}</p>
+              <img src="${user.profilePhoto}" alt="Photo de profil" class="profile-photo" />
+            `;
+              searchResults.appendChild(userItem);
+            });
           }
-        })
-        .catch((error) => {
-          console.error("Error:", error);
+        } catch (error) {
+          console.error("Erreur lors de la recherche d'utilisateur:", error);
           alert("Une erreur s'est produite. Veuillez réessayer.");
-        });
-    });
+        }
+      });
+  });
 
   // Logique de soumission du formulaire de modification du profil d'un ami
   document
@@ -1128,6 +1138,68 @@ window.onload = function () {
     fetchFriendFriends(friendId);
   });
   document.addEventListener("DOMContentLoaded", async function () {
+    async function fetchFriendFriends(memberId) {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/memberFriends/${memberId}`
+        );
+        const friends = await response.json();
+        const friendFriendsList = document.getElementById("friendFriendsList");
+        friendFriendsList.innerHTML = ""; // Vider la liste avant de la remplir
+
+        friends.forEach((friend) => {
+          const listItem = document.createElement("li");
+          listItem.innerHTML = `
+            <img src="${friend.profilePhoto}" alt="Photo de ${friend.username}" class="friend-photo" />
+            <p>Pseudonyme : ${friend.username}</p>
+            <p>Nom : ${friend.lastName}</p>
+            <p>Prénom : ${friend.firstName}</p>
+            <button class="remove-friend-button" data-friend-id="${friend._id}">Supprimer</button>
+          `;
+          friendFriendsList.appendChild(listItem);
+        });
+
+        // Ajouter des gestionnaires d'événements pour les boutons de suppression
+        document.querySelectorAll(".remove-friend-button").forEach((button) => {
+          button.addEventListener("click", async function () {
+            const friendId = this.getAttribute("data-friend-id");
+            const memberId = localStorage.getItem("userId"); // Assure-toi que l'ID de l'utilisateur est stocké dans le localStorage
+
+            try {
+              const response = await fetch(
+                `http://localhost:3000/api/removeFriend/${memberId}/${friendId}`,
+                {
+                  method: "DELETE",
+                }
+              );
+              const result = await response.json();
+
+              if (result.error) {
+                alert(result.error);
+              } else {
+                alert("Ami supprimé avec succès.");
+                fetchFriendFriends(memberId); // Rafraîchir la liste des amis
+              }
+            } catch (error) {
+              console.error("Erreur lors de la suppression de l'ami:", error);
+              alert("Une erreur s'est produite. Veuillez réessayer.");
+            }
+          });
+        });
+      } catch (error) {
+        console.error(
+          "Erreur lors de la récupération des amis confirmés:",
+          error
+        );
+        alert("Une erreur s'est produite. Veuillez réessayer.");
+      }
+    }
+
+    // Exemple d'appel de la fonction avec un ID de membre spécifique
+    const memberId = localStorage.getItem("userId"); // Assure-toi que l'ID de l'utilisateur est stocké dans le localStorage
+    fetchFriendFriends(memberId);
+  });
+  document.addEventListener("DOMContentLoaded", async function () {
     // Fonction pour récupérer et afficher les amis confirmés d'un membre
     async function fetchMemberFriends(memberId) {
       try {
@@ -1300,5 +1372,145 @@ window.onload = function () {
 
     // Appeler la fonction pour récupérer et afficher les demandes d'amis au chargement de la page
     fetchFriendRequests();
+  });
+  document.addEventListener("DOMContentLoaded", async function () {
+    // Fonction pour récupérer et afficher la liste des utilisateurs
+    async function fetchUsers() {
+      try {
+        const response = await fetch("http://localhost:3000/api/users");
+        const users = await response.json();
+        const usersList = document.getElementById("usersList");
+        usersList.innerHTML = ""; // Vider la liste avant de la remplir
+
+        if (users.length === 0) {
+          usersList.textContent = "Aucun utilisateur trouvé.";
+        } else {
+          users.forEach((user) => {
+            const userItem = document.createElement("div");
+            userItem.innerHTML = `
+              <p class="user-name" data-user-id="${user._id}">${user.username}</p>
+              <p>Nom : ${user.lastName}</p>
+              <p>Prénom : ${user.firstName}</p>
+              <p>Email : ${user.email}</p>
+              <p>Genre : ${user.gender}</p>
+              <p>Âge : ${user.age}</p>
+              <p>Préférences : ${user.preferences}</p>
+              <p>Présentation : ${user.bio}</p>
+              <img src="${user.profilePhoto}" alt="Photo de profil" class="profile-photo" />
+            `;
+            usersList.appendChild(userItem);
+          });
+
+          // Ajouter des gestionnaires d'événements pour les noms d'utilisateur
+          document.querySelectorAll(".user-name").forEach((name) => {
+            name.addEventListener("click", async function () {
+              const userId = this.getAttribute("data-user-id");
+
+              try {
+                const response = await fetch(
+                  `http://localhost:3000/api/user/${userId}`
+                );
+                const user = await response.json();
+
+                // Afficher les détails de l'utilisateur
+                document.getElementById("detailUsername").textContent =
+                  user.username;
+                document.getElementById("detailLastName").textContent =
+                  user.lastName;
+                document.getElementById("detailFirstName").textContent =
+                  user.firstName;
+                document.getElementById("detailEmail").textContent = user.email;
+                document.getElementById("detailGender").textContent =
+                  user.gender;
+                document.getElementById("detailAge").textContent = user.age;
+                document.getElementById("detailPreferences").textContent =
+                  user.preferences;
+                document.getElementById("detailBio").textContent = user.bio;
+                document.getElementById("detailProfilePhoto").src =
+                  user.profilePhoto;
+
+                document.getElementById("userDetails").style.display = "block";
+                document.getElementById(
+                  "sendFriendRequestButton"
+                ).style.display = "block";
+                document
+                  .getElementById("sendFriendRequestButton")
+                  .setAttribute("data-user-id", user._id);
+
+                // Afficher les recommandations d'ajout
+                const recommendationsList = document.getElementById(
+                  "recommendationsList"
+                );
+                recommendationsList.innerHTML = ""; // Vider la liste avant de la remplir
+                user.friends.forEach((friend) => {
+                  if (friend.status === "recommandé") {
+                    const listItem = document.createElement("li");
+                    listItem.textContent = `Recommandé par ${friend.recommenderId}`;
+                    recommendationsList.appendChild(listItem);
+                  }
+                });
+                document.getElementById("recommendations").style.display =
+                  "block";
+              } catch (error) {
+                console.error(
+                  "Erreur lors de la récupération des détails de l'utilisateur:",
+                  error
+                );
+                alert("Une erreur s'est produite. Veuillez réessayer.");
+              }
+            });
+          });
+
+          // Ajouter un gestionnaire d'événements pour le bouton d'envoi d'invitation d'ami
+          document
+            .getElementById("sendFriendRequestButton")
+            .addEventListener("click", async function () {
+              const userId = this.getAttribute("data-user-id");
+              const requesterId = localStorage.getItem("userId"); // Assure-toi que l'ID du membre demandeur est stocké dans le localStorage
+
+              try {
+                const response = await fetch(
+                  "http://localhost:3000/api/sendFriendRequest",
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ requesterId, userId }),
+                  }
+                );
+                const result = await response.json();
+
+                if (result.error) {
+                  alert(result.error);
+                } else {
+                  // Afficher le message de confirmation
+                  const requestMessage =
+                    document.getElementById("requestMessage");
+                  requestMessage.style.display = "block";
+                  setTimeout(() => {
+                    requestMessage.style.display = "none";
+                  }, 3000); // Masquer le message après 3 secondes
+                }
+              } catch (error) {
+                console.error(
+                  "Erreur lors de l'envoi de l'invitation d'ami:",
+                  error
+                );
+                alert("Une erreur s'est produite. Veuillez réessayer.");
+              }
+            });
+        }
+      } catch (error) {
+        console.error(
+          "Erreur lors de la récupération des utilisateurs:",
+          error
+        );
+        alert("Une erreur s'est produite. Veuillez réessayer.");
+      }
+    }
+
+    // Appeler la fonction pour récupérer et afficher les utilisateurs au chargement de la page
+    fetchUsers();
   });
 };

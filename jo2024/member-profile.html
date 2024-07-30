@@ -86,7 +86,6 @@
               placeholder="Écrire une réponse..."
               required
             ></textarea>
-
             <button type="submit">Répondre</button>
           </form>
         </div>
@@ -138,7 +137,87 @@
             class="profile-photo"
           />
         </div>
+        <div class="friends-container">
+          <h2>Liste d'amis confirmés</h2>
+          <ul id="friendsList">
+            <!-- Exemple d'ami avec bouton de suppression -->
+            <li>
+              <img
+                src="URL_DE_LA_PHOTO"
+                alt="Photo de PSEUDONYME"
+                class="friend-photo"
+              />
+              <p>Pseudonyme : PSEUDONYME</p>
+              <p>Nom : NOM</p>
+              <p>Prénom : PRÉNOM</p>
+              <button class="remove-friend-button" data-friend-id="ID_AMI">
+                Supprimer
+              </button>
+            </li>
+          </ul>
+        </div>
+        <div class="friend-requests-container">
+          <h2>Demandes d'amis</h2>
+          <ul id="friendRequestsList">
+            <!-- Les demandes d'amis seront ajoutées ici dynamiquement -->
+          </ul>
+        </div>
+        <div id="confirmationMessage" style="display: none; color: green">
+          La demande d'ami a été confirmée avec succès.
+        </div>
+        <div id="ignoreMessage" style="display: none; color: red">
+          La demande d'ami a été ignorée.
+        </div>
+        <div class="form-container">
+          <div class="form-box">
+            <h2>Recommander un ami</h2>
+            <form id="recommendFriendForm">
+              <label for="confirmedFriends">Sélectionner un ami :</label>
+              <select id="confirmedFriends" required>
+                <!-- Les options seront ajoutées dynamiquement -->
+              </select>
+              <button type="submit">Recommander</button>
+            </form>
+            <p id="recommendationMessage" style="display: none; color: green">
+              Recommandation envoyée avec succès !
+            </p>
+          </div>
+        </div>
+        <div class="form-container">
+          <div class="form-box">
+            <h2>Liste des utilisateurs</h2>
+            <div id="usersList"></div>
+          </div>
+          <div class="form-box" id="userDetails" style="display: none">
+            <h2>Détails de l'utilisateur</h2>
+            <p>Pseudonyme : <span id="detailUsername"></span></p>
+            <p>Nom : <span id="detailLastName"></span></p>
+            <p>Prénom : <span id="detailFirstName"></span></p>
+            <p>Email : <span id="detailEmail"></span></p>
+            <p>Genre : <span id="detailGender"></span></p>
+            <p>Âge : <span id="detailAge"></span></p>
+            <p>Préférences : <span id="detailPreferences"></span></p>
+            <p>Présentation : <span id="detailBio"></span></p>
+            <img
+              id="detailProfilePhoto"
+              src=""
+              alt="Photo de profil"
+              class="profile-photo"
+            />
+            <button id="sendFriendRequestButton" style="display: none">
+              Envoyer une invitation d'ami
+            </button>
+            <p id="requestMessage" style="display: none; color: green">
+              Invitation d'ami envoyée avec succès !
+            </p>
+            <div id="recommendations" style="display: none">
+              <h3>Recommandations d'ajout</h3>
+              <ul id="recommendationsList"></ul>
+            </div>
+          </div>
+        </div>
       </div>
+
       <a href="index.html" class="button back-link">Retour à l'accueil</a>
       <button id="logoutButton" class="logout-button">Déconnexion</button>
     </div>
