@@ -197,6 +197,24 @@ app.get("/api/memberFriends/:memberId", async (req, res) => {
     res.status(500).json({ error: "Erreur du serveur." });
   }
 });
+app.get("/api/user/:userId", async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "Utilisateur non trouvé." });
+    }
+
+    res.status(200).json(user);
+  } catch (err) {
+    console.error(
+      "Erreur lors de la récupération des informations de l'utilisateur:",
+      err
+    );
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
 
 // Route pour gérer l'inscription
 app.post("/api/register", async (req, res) => {
@@ -439,6 +457,51 @@ app.post("/api/updateUserProfile", async (req, res) => {
     res.status(500).json({ error: "Erreur du serveur." });
   }
 });
+app.post("/api/recommendFriend", async (req, res) => {
+  const { friendId, recommenderId } = req.body;
+
+  try {
+    const friend = await User.findById(friendId);
+    const recommender = await User.findById(recommenderId);
+
+    if (!friend || !recommender) {
+      return res
+        .status(404)
+        .json({ error: "Ami ou recommandateur non trouvé." });
+    }
+
+    // Ajouter l'ami recommandé à la liste d'amis du recommandateur avec le statut "Recommandé"
+    recommender.friends.push({ friendId: friend._id, status: "Recommandé" });
+    await recommender.save();
+
+    // Envoyer une notification par email à l'administrateur
+    const adminEmail = process.env.ADMIN_EMAIL; // Assure-toi que l'email de l'administrateur est défini dans les variables d'environnement
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: adminEmail,
+      subject: "Nouvelle recommandation d'ami",
+      text: `Bonjour,\n\n${recommender.username} a recommandé ${friend.username} comme ami.\n\nCordialement,\nL'équipe`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res
+      .status(200)
+      .json({ message: "Ami recommandé avec succès et notification envoyée." });
+  } catch (err) {
+    console.error("Erreur lors de la recommandation de l'ami:", err);
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
 
 // Route pour supprimer le profil utilisateur
 app.delete("/api/deleteProfile", async (req, res) => {
@@ -608,18 +671,100 @@ app.post("/api/addFriend/:adminId/:memberId", async (req, res) => {
     res.status(500).json({ error: "Erreur du serveur." });
   }
 });
-app.delete("/api/deleteMessage", async (req, res) => {
-  const { messageId } = req.body;
+app.post("/api/searchUsers", async (req, res) => {
+  const { username, firstName, lastName } = req.body;
 
   try {
-    const message = await Message.findByIdAndDelete(messageId);
-    if (!message) {
-      return res.status(404).json({ error: "Message non trouvé." });
+    const query = {};
+    if (username) query.username = new RegExp(username, "i");
+    if (firstName) query.firstName = new RegExp(firstName, "i");
+    if (lastName) query.lastName = new RegExp(lastName, "i");
+
+    const users = await User.find(query);
+    res.status(200).json(users);
+  } catch (err) {
+    console.error("Erreur lors de la recherche d'utilisateurs:", err);
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
+app.post("/api/addFriend", async (req, res) => {
+  const { adminId, userId } = req.body;
+
+  try {
+    const admin = await User.findById(adminId);
+    const user = await User.findById(userId);
+
+    if (!admin || !user) {
+      return res
+        .status(404)
+        .json({ error: "Administrateur ou utilisateur non trouvé." });
     }
 
-    res.status(200).json({ message: "Message supprimé avec succès." });
+    // Ajouter l'utilisateur à la liste d'amis de l'administrateur avec le statut "Confirmé"
+    admin.friends.push({ friendId: user._id, status: "Confirmé" });
+    await admin.save();
+
+    res
+      .status(200)
+      .json({ message: "Utilisateur ajouté à la liste d'amis avec succès." });
   } catch (err) {
-    console.error("Erreur lors de la suppression du message:", err);
+    console.error("Erreur lors de l'ajout de l'ami:", err);
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
+app.post("/api/sendFriendRequest", async (req, res) => {
+  const { requesterId, userId } = req.body;
+
+  try {
+    const requester = await User.findById(requesterId);
+    const user = await User.findById(userId);
+
+    if (!requester || !user) {
+      return res
+        .status(404)
+        .json({ error: "Membre demandeur ou utilisateur non trouvé." });
+    }
+
+    // Ajouter l'utilisateur à la liste d'amis du membre demandeur avec le statut "invitation en cours"
+    requester.friends.push({
+      friendId: user._id,
+      status: "invitation en cours",
+    });
+    await requester.save();
+
+    // Ajouter le membre demandeur à la liste d'amis de l'administrateur avec le statut "en attente de confirmation"
+    user.friends.push({
+      friendId: requester._id,
+      status: "en attente de confirmation",
+    });
+    await user.save();
+
+    // Envoyer une notification par email à l'administrateur
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: user.email,
+      subject: "Nouvelle invitation d'ami",
+      text: `Bonjour ${user.username},\n\nVous avez reçu une nouvelle invitation d'ami de la part de ${requester.username}.\n\nCordialement,\nL'équipe`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res
+      .status(200)
+      .json({
+        message:
+          "Invitation d'ami envoyée avec succès et notification envoyée.",
+      });
+  } catch (err) {
+    console.error("Erreur lors de l'envoi de l'invitation d'ami:", err);
     res.status(500).json({ error: "Erreur du serveur." });
   }
 });
