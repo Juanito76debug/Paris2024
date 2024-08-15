@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Messagerie Privée - Réseau Social JO 2024</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Messagerie Privée</h1>
+
+      <div id="adminPostSection">
+        <h2>Publier un message en tant qu'administrateur</h2>
+        <form id="adminPostForm">
+          <label for="discussionSelect">Choisir un sujet de discussion :</label>
+          <select id="discussionSelect">
+            <!-- Les options seront générées dynamiquement -->
+          </select>
+          <textarea
+            id="adminMessageContent"
+            placeholder="Écrire un message..."
+            required
+          ></textarea>
+          <button type="submit">Publier</button>
+        </form>
+      </div>
+
+      <div id="discussionsList" class="discussions-list">
+        <h2>Sujets de Discussion</h2>
+        <div class="discussion-item" data-discussion-id="1">
+          <p>Titre de la discussion 1</p>
+          <button class="deleteDiscussionButton">Supprimer</button>
+
+          <!-- Formulaire de publication de message -->
+          <form class="postMessageForm">
+            <textarea
+              class="messageContent"
+              placeholder="Écrire un message..."
+              required
+            ></textarea>
+            <button type="submit">Publier</button>
+          </form>
+
+          <!-- Liste des messages de la discussion -->
+          <div class="messagesList">
+            <div class="message-item" data-message-id="123">
+              <p>Contenu du message</p>
+              <button class="deleteMessageButton">Supprimer</button>
+            </div>
+            <button class="deleteDiscussionButton" data-discussion-id="1">Supprimer</button>
+        
+
+        <div class="discussion-item" data-discussion-id="2">
+          <p>Titre de la discussion 2</p>
+          <button class="deleteDiscussionButton">Supprimer</button>
+
+          <!-- Formulaire de publication de message -->
+          <form class="postMessageForm">
+            <textarea
+              class="messageContent"
+              placeholder="Écrire un message..."
+              required
+            ></textarea>
+            <button type="submit">Publier</button>
+          </form>
+
+          <!-- Liste des messages de la discussion -->
+          <div class="messagesList"></div>
+        </div>
+
+        <!-- Ajoutez plus de discussions ici -->
+      </div>
+
+      <a href="profile.html">Retour au profil</a>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", (event) => {
+        const isAdmin = true; // Exemple, remplacer par la logique réelle pour vérifier si l'utilisateur est admin
+
+        if (isAdmin) {
+          // Générer les options dans la liste déroulante pour chaque sujet de discussion
+          const discussionSelect = document.getElementById("discussionSelect");
+          const discussionItems = document.querySelectorAll(".discussion-item");
+
+          discussionItems.forEach((discussionItem) => {
+            const discussionId =
+              discussionItem.getAttribute("data-discussion-id");
+            const discussionTitle =
+              discussionItem.querySelector("p").textContent;
+
+            // Créer une option pour chaque discussion
+            const option = document.createElement("option");
+            option.value = discussionId;
+            option.textContent = discussionTitle;
+            discussionSelect.appendChild(option);
+          });
+
+          // Gestion de la publication pour les administrateurs via le formulaire global
+          const adminPostForm = document.getElementById("adminPostForm");
+          adminPostForm.addEventListener("submit", function (event) {
+            event.preventDefault();
+
+            const selectedDiscussionId = discussionSelect.value;
+            const messageContent = document.getElementById(
+              "adminMessageContent"
+            ).value;
+
+            // Trouver la discussion correspondante
+            const selectedDiscussion = document.querySelector(
+              `.discussion-item[data-discussion-id="${selectedDiscussionId}"]`
+            );
+            const messagesList =
+              selectedDiscussion.querySelector(".messagesList");
+
+            // Ajouter le message à la discussion
+            const newMessage = document.createElement("p");
+            newMessage.textContent = messageContent;
+            messagesList.appendChild(newMessage);
+
+            // Réinitialiser le formulaire
+            document.getElementById("adminMessageContent").value = "";
+          });
+        }
+
+        // Logique pour gérer la publication de messages individuels (si non admin)
+        document.querySelectorAll(".postMessageForm").forEach((form) => {
+          form.addEventListener("submit", function (event) {
+            event.preventDefault();
+            const messageContent = this.querySelector(".messageContent").value;
+            const discussionItem = this.closest(".discussion-item");
+            const messagesList = discussionItem.querySelector(".messagesList");
+
+            // Ajouter le message à la discussion
+            const newMessage = document.createElement("p");
+            newMessage.textContent = messageContent;
+            messagesList.appendChild(newMessage);
+
+            // Réinitialiser le champ de message
+            this.querySelector(".messageContent").value = "";
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

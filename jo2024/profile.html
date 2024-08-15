@@ -81,11 +81,11 @@
           <button type="submit">Publier</button>
         </form>
         <!-- Les messages publiés seront affichés ici -->
-        <div id="messagesList"></div>
-        <div class="message-item" data-message-id="123">
-          <p>Contenu du message</p>
-          <button class="deleteButton">Supprimer</button>
-        </div>
+        <div id="messagesList">
+          <div class="message-item" data-message-id="123">
+            <p>Contenu du message</p>
+            <button class="deleteMessageButton">Supprimer</button>
+          </div>
       </div>
 
       <!-- Formulaire de réponse à un message pour les administrateurs -->
@@ -381,7 +381,26 @@
             </div>
           </div>
         </div>
-      </div>
+        <div class="form-container">
+          <div class="form-box">
+            <h2>Discussions</h2>
+            <button id="openDiscussionButton">Ouvrir un nouveau sujet de discussion</button>
+            <div id="discussionsList" class="discussions-list">
+              <!-- Les sujets de discussion seront affichés ici -->
+              <div class="discussion-item" data-discussion-id="1">
+                <p>Titre de la discussion 1</p>
+                <button class="deleteDiscussionButton">Supprimer</button>
+              </div>
+              <div class="discussion-item" data-discussion-id="2">
+                <p>Titre de la discussion 2</p>
+                <button class="deleteDiscussionButton">Supprimer</button>
+              </div>
+              <!-- Ajouter d'autres discussions ici -->
+            </div>
+          </div>
+        </div>
+          
+        
 
       <a href="index.html">Retour à l'accueil</a>
       <button id="logoutButton">Déconnexion</button>

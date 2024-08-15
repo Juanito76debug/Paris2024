@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
@@ -81,6 +81,10 @@
         <div class="form-box">
           <h2>Répondre au message</h2>
           <form id="replyMessageForm">
+            <label for="messageSelect">Sélectionner un message :</label>
+            <select id="messageSelect">
+              <!-- Les options seront ajoutées dynamiquement -->
+            </select>
             <textarea
               id="replyContent"
               placeholder="Écrire une réponse..."
@@ -216,6 +220,36 @@
             </div>
           </div>
         </div>
+        <div class="form-container">
+          <div class="form-box">
+            <h2>Discussions</h2>
+            <button id="openDiscussionButton">
+              Ouvrir un nouveau sujet de discussion
+            </button>
+            <div id="discussionsList" class="discussions-list">
+              <h2>Sujets de Discussion</h2>
+              <!-- Exemple de sujet de discussion avec bouton de suppression et formulaire de publication -->
+              <div class="discussion-item" data-discussion-id="1">
+                <p>Titre de la discussion</p>
+                <button class="deleteDiscussionButton">Supprimer</button>
+                
+                <!-- Formulaire de publication de message -->
+                <form class="postMessageForm">
+                  <textarea class="messageContent" placeholder="Écrire un message..." required></textarea>
+                  <button type="submit">Publier</button>
+                </form>
+                
+                <!-- Liste des messages de la discussion -->
+                <div class="messagesList"></div>
+              </div>
+            </div>
+            <div id="messagesList"></div>
+        <div class="message-item" data-message-id="123">
+          <p>Contenu du message</p>
+          <button class="deleteButton">Supprimer</button>
+        </div>
+      
+        
       </div>
 
       <a href="index.html" class="button back-link">Retour à l'accueil</a>

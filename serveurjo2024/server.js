@@ -62,6 +62,19 @@ app.get("/api/messageCount", async (req, res) => {
     res.status(500).json({ error: "Erreur du serveur." });
   }
 });
+const discussionSchema = new mongoose.Schema({
+  title: String,
+  participants: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  messages: [
+    {
+      content: String,
+      sender: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      date: { type: Date, default: Date.now },
+    },
+  ],
+});
+
+const Discussion = mongoose.model("Discussion", discussionSchema);
 
 // Route pour servir le fichier HTML de la page d'accueil
 app.get("/", (req, res) => {
@@ -215,7 +228,18 @@ app.get("/api/user/:userId", async (req, res) => {
     res.status(500).json({ error: "Erreur du serveur." });
   }
 });
-
+app.get("/api/getDiscussions", async (req, res) => {
+  try {
+    const discussions = await Discussion.find().populate(
+      "participants",
+      "username firstName lastName"
+    );
+    res.status(200).json(discussions);
+  } catch (err) {
+    console.error("Erreur lors de la récupération des discussions:", err);
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
 // Route pour gérer l'inscription
 app.post("/api/register", async (req, res) => {
   const {
@@ -757,17 +781,74 @@ app.post("/api/sendFriendRequest", async (req, res) => {
 
     await transporter.sendMail(mailOptions);
 
-    res
-      .status(200)
-      .json({
-        message:
-          "Invitation d'ami envoyée avec succès et notification envoyée.",
-      });
+    res.status(200).json({
+      message: "Invitation d'ami envoyée avec succès et notification envoyée.",
+    });
   } catch (err) {
     console.error("Erreur lors de l'envoi de l'invitation d'ami:", err);
     res.status(500).json({ error: "Erreur du serveur." });
   }
 });
+app.post("/api/createDiscussion", async (req, res) => {
+  const { title, participants } = req.body;
+
+  if (!title || !participants || participants.length === 0) {
+    return res
+      .status(400)
+      .json({ error: "Le titre et les participants sont requis." });
+  }
+
+  try {
+    const newDiscussion = new Discussion({ title, participants });
+    await newDiscussion.save();
+
+    res.status(200).json({ message: "Discussion créée avec succès." });
+  } catch (err) {
+    console.error("Erreur lors de la création de la discussion:", err);
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
+app.post("/api/postMessageInDiscussion", async (req, res) => {
+  const { discussionId, content, senderId } = req.body;
+
+  if (!discussionId || !content || !senderId) {
+    return res.status(400).json({
+      error:
+        "L'ID de la discussion, le contenu du message et l'ID de l'expéditeur sont requis.",
+    });
+  }
+
+  try {
+    // Vérifiez que l'utilisateur est un administrateur (ajoutez votre logique de vérification ici)
+    const admin = await User.findById(senderId);
+    if (!admin || admin.status !== "Admin") {
+      return res
+        .status(403)
+        .json({ error: "Vous n'êtes pas autorisé à publier des messages." });
+    }
+
+    // Trouvez la discussion
+    const discussion = await Discussion.findById(discussionId);
+    if (!discussion) {
+      return res.status(404).json({ error: "Discussion non trouvée." });
+    }
+
+    // Ajoutez le message à la discussion
+    discussion.messages.push({ content, sender: senderId });
+    await discussion.save();
+
+    res
+      .status(200)
+      .json({ message: "Message publié avec succès dans la discussion." });
+  } catch (err) {
+    console.error(
+      "Erreur lors de la publication du message dans la discussion:",
+      err
+    );
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
+
 app.delete("/api/removeFriend/:adminId/:friendId", async (req, res) => {
   const { adminId, friendId } = req.params;
 
@@ -839,6 +920,41 @@ app.delete("/api/ignoreFriendRequest/:adminId/:memberId", async (req, res) => {
     res.status(500).json({ error: "Erreur du serveur." });
   }
 });
+app.delete("/api/deleteDiscussion/:discussionId", async (req, res) => {
+  const { discussionId } = req.params;
+
+  try {
+    const discussion = await Discussion.findByIdAndDelete(discussionId);
+    if (!discussion) {
+      return res.status(404).json({ error: "Discussion non trouvée." });
+    }
+
+    res.status(200).json({ message: "Discussion supprimée avec succès." });
+  } catch (err) {
+    console.error("Erreur lors de la suppression de la discussion:", err);
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
+app.delete("/api/deleteDiscussionMessage/:messageId", async (req, res) => {
+  const { messageId } = req.params;
+
+  try {
+    const discussion = await Discussion.findOne({ "messages._id": messageId });
+    if (!discussion) {
+      return res.status(404).json({ error: "Message non trouvé." });
+    }
+
+    discussion.messages.id(messageId).remove();
+    await discussion.save();
+
+    res.status(200).json({ message: "Message supprimé avec succès." });
+  } catch (err) {
+    console.error("Erreur lors de la suppression du message:", err);
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
+
+
 app.listen(port, () => {
   console.log(`Serveur en écoute sur http://localhost:${port}`);
 });

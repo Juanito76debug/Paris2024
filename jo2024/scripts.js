@@ -1041,15 +1041,14 @@ window.onload = function () {
             "http://localhost:3000/api/confirmedFriends"
           );
           const friends = await response.json();
-          const confirmedFriendsSelect =
-            document.getElementById("confirmedFriends");
-          confirmedFriendsSelect.innerHTML = ""; // Vider la liste avant de la remplir
+          const selectFriends = document.getElementById("selectFriends");
+          selectFriends.innerHTML = ""; // Vider la liste avant de la remplir
 
           friends.forEach((friend) => {
             const option = document.createElement("option");
             option.value = friend._id;
             option.textContent = `${friend.username} (${friend.firstName} ${friend.lastName})`;
-            confirmedFriendsSelect.appendChild(option);
+            selectFriends.appendChild(option);
           });
         } catch (error) {
           console.error(
@@ -1062,6 +1061,49 @@ window.onload = function () {
 
       // Appeler la fonction pour récupérer et afficher les amis confirmés au chargement de la page
       fetchConfirmedFriends();
+
+      // Logique de soumission du formulaire de création de discussion
+      document
+        .getElementById("createDiscussionForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+          const title = document.getElementById("discussionTitle").value;
+          const selectedFriends = Array.from(
+            document.getElementById("selectFriends").selectedOptions
+          ).map((option) => option.value);
+
+          try {
+            const response = await fetch(
+              "http://localhost:3000/api/createDiscussion",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ title, participants: selectedFriends }),
+              }
+            );
+            const result = await response.json();
+
+            if (result.error) {
+              alert(result.error);
+            } else {
+              alert("Discussion créée avec succès !");
+              // Ajouter la discussion à la liste des discussions
+              const discussionsList =
+                document.getElementById("discussionsList");
+              const discussionItem = document.createElement("div");
+              discussionItem.textContent = title;
+              discussionsList.appendChild(discussionItem);
+            }
+          } catch (error) {
+            console.error(
+              "Erreur lors de la création de la discussion:",
+              error
+            );
+            alert("Une erreur s'est produite. Veuillez réessayer.");
+          }
+        });
 
       // Logique de soumission du formulaire de recommandation d'ami
       document
@@ -1514,3 +1556,311 @@ window.onload = function () {
     fetchUsers();
   });
 };
+document.addEventListener("DOMContentLoaded", async function () {
+  // Fonction pour rechercher des membres
+  async function searchMembers(query) {
+    try {
+      const response = await fetch("http://localhost:3000/api/searchUsers", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query }),
+      });
+      const members = await response.json();
+      const selectMembers = document.getElementById("selectMembers");
+      selectMembers.innerHTML = ""; // Vider la liste avant de la remplir
+
+      members.forEach((member) => {
+        const option = document.createElement("option");
+        option.value = member._id;
+        option.textContent = `${member.username} (${member.firstName} ${member.lastName})`;
+        selectMembers.appendChild(option);
+      });
+    } catch (error) {
+      console.error("Erreur lors de la recherche des membres:", error);
+      alert("Une erreur s'est produite. Veuillez réessayer.");
+    }
+  }
+
+  // Gestionnaire d'événement pour le bouton de recherche
+  document
+    .getElementById("searchButton")
+    .addEventListener("click", function () {
+      const query = document.getElementById("searchMembers").value;
+      searchMembers(query);
+    });
+
+  // Logique de soumission du formulaire de création de discussion
+  document
+    .getElementById("createDiscussionForm")
+    .addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const title = document.getElementById("discussionTitle").value;
+      const selectedMembers = Array.from(
+        document.getElementById("selectMembers").selectedOptions
+      ).map((option) => option.value);
+
+      try {
+        const response = await fetch(
+          "http://localhost:3000/api/createDiscussion",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ title, participants: selectedMembers }),
+          }
+        );
+        const result = await response.json();
+
+        if (result.error) {
+          alert(result.error);
+        } else {
+          alert("Discussion créée avec succès !");
+          // Ajouter la discussion à la liste des discussions
+          const discussionsList = document.getElementById("discussionsList");
+          const discussionItem = document.createElement("div");
+          discussionItem.className = "discussion-item";
+          discussionItem.dataset.discussionId = result.discussionId;
+          discussionItem.innerHTML = `
+          <p>${title}</p>
+          <button class="deleteDiscussionButton">Supprimer</button>
+          <button class="viewDiscussionButton">Voir</button>
+        `;
+          discussionsList.appendChild(discussionItem);
+
+          // Mettre à jour la liste déroulante des discussions dans le formulaire de message
+          const discussionSelect = document.getElementById("discussionSelect");
+          const option = document.createElement("option");
+          option.value = result.discussionId;
+          option.textContent = title;
+          discussionSelect.appendChild(option);
+        }
+      } catch (error) {
+        console.error("Erreur lors de la création de la discussion:", error);
+        alert("Une erreur s'est produite. Veuillez réessayer.");
+      }
+    });
+
+  // Fonction pour récupérer et afficher les discussions
+  document.addEventListener("DOMContentLoaded", async function () {
+    async function fetchDiscussions() {
+      try {
+        const response = await fetch(
+          "http://localhost:3000/api/getDiscussions"
+        );
+        const discussions = await response.json();
+        const discussionsList = document.getElementById("discussionsList");
+        const discussionSelect = document.getElementById("discussionSelect"); // Select pour le formulaire de message
+        discussionsList.innerHTML = ""; // Vider la liste avant de la remplir
+        discussionSelect.innerHTML = ""; // Vider la liste déroulante avant de la remplir
+
+        discussions.forEach((discussion) => {
+          // Ajouter à la liste des discussions
+          const discussionItem = document.createElement("div");
+          discussionItem.className = "discussion-item";
+          discussionItem.dataset.discussionId = discussion._id;
+          discussionItem.innerHTML = `
+            <p>${discussion.title}</p>
+            <button class="deleteDiscussionButton">Supprimer</button>
+            <button class="viewDiscussionButton">Voir</button>
+          `;
+          discussionsList.appendChild(discussionItem);
+
+          // Ajouter à la liste déroulante pour la publication de messages
+          const option = document.createElement("option");
+          option.value = discussion._id;
+          option.textContent = discussion.title;
+          discussionSelect.appendChild(option);
+        });
+
+        // Gestionnaires d'événements pour la suppression et la visualisation des discussions
+        document
+          .querySelectorAll(".deleteDiscussionButton")
+          .forEach((button) => {
+            button.addEventListener("click", async function () {
+              const discussionId =
+                this.closest(".discussion-item").dataset.discussionId;
+              try {
+                const response = await fetch(
+                  `http://localhost:3000/api/deleteDiscussion/${discussionId}`,
+                  { method: "DELETE" }
+                );
+                const result = await response.json();
+                if (result.error) {
+                  alert(result.error);
+                } else {
+                  alert("Discussion supprimée avec succès !");
+                  this.closest(".discussion-item").remove();
+                }
+              } catch (error) {
+                console.error(
+                  "Erreur lors de la suppression de la discussion:",
+                  error
+                );
+                alert("Une erreur s'est produite. Veuillez réessayer.");
+              }
+            });
+          });
+
+        document.querySelectorAll(".viewDiscussionButton").forEach((button) => {
+          button.addEventListener("click", async function () {
+            const discussionId =
+              this.closest(".discussion-item").dataset.discussionId;
+            try {
+              const response = await fetch(
+                `http://localhost:3000/api/getDiscussionMessages/${discussionId}`
+              );
+              const messages = await response.json();
+              const messagesList = document.getElementById("messagesList");
+              messagesList.innerHTML = ""; // Vider la liste avant de la remplir
+
+              messages.forEach((message) => {
+                const messageItem = document.createElement("div");
+                messageItem.textContent = message.content;
+                messagesList.appendChild(messageItem);
+              });
+
+              document.getElementById("discussionMessages").style.display =
+                "block";
+              document.getElementById("postMessageForm").dataset.discussionId =
+                discussionId;
+            } catch (error) {
+              console.error(
+                "Erreur lors de la récupération des messages de la discussion:",
+                error
+              );
+              alert("Une erreur s'est produite. Veuillez réessayer.");
+            }
+          });
+        });
+      } catch (error) {
+        console.error("Erreur lors de la récupération des discussions:", error);
+        alert("Une erreur s'est produite. Veuillez réessayer.");
+      }
+    }
+
+    // Appeler la fonction pour récupérer et afficher les discussions au chargement de la page
+    fetchDiscussions();
+
+    // Gestionnaire d'événement pour le bouton d'ouverture de discussion
+    document
+      .getElementById("openDiscussionButton")
+      .addEventListener("click", function () {
+        window.location.href = "messenger.html";
+      });
+
+    // Gestionnaire d'événement pour la publication de messages
+    document
+      .getElementById("postMessageForm")
+      .addEventListener("submit", async function (event) {
+        event.preventDefault();
+        const discussionId = document.getElementById("discussionSelect").value;
+        const content = document.getElementById("messageContent").value;
+
+        try {
+          const response = await fetch(
+            `http://localhost:3000/api/postDiscussionMessage/${discussionId}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ content }),
+            }
+          );
+          const result = await response.json();
+
+          if (result.error) {
+            alert(result.error);
+          } else {
+            const messagesList = document.getElementById("messagesList");
+            const messageItem = document.createElement("div");
+            messageItem.className = "message-item";
+            messageItem.dataset.messageId = result.messageId;
+            messageItem.innerHTML = `
+            <p>${content}</p>
+            <button class="deleteMessageButton">Supprimer</button>
+          `;
+            messagesList.appendChild(messageItem);
+
+            document.getElementById("messageContent").value = ""; // Réinitialiser le champ de texte
+
+            // Ajouter un gestionnaire d'événement pour le bouton de suppression du nouveau message
+            messageItem
+              .querySelector(".deleteMessageButton")
+              .addEventListener("click", async function () {
+                const messageId = messageItem.dataset.messageId;
+                try {
+                  const response = await fetch(
+                    `http://localhost:3000/api/deleteDiscussionMessage/${messageId}`,
+                    { method: "DELETE" }
+                  );
+                  const result = await response.json();
+                  if (result.error) {
+                    alert(result.error);
+                  } else {
+                    alert("Message supprimé avec succès !");
+                    messageItem.remove();
+                  }
+                } catch (error) {
+                  console.error(
+                    "Erreur lors de la suppression du message:",
+                    error
+                  );
+                  alert("Une erreur s'est produite. Veuillez réessayer.");
+                }
+              });
+          }
+        } catch (error) {
+          console.error("Erreur lors de la publication du message:", error);
+          alert("Une erreur s'est produite. Veuillez réessayer.");
+        }
+      });
+  });
+  document.addEventListener("DOMContentLoaded", () => {
+    const isAdmin = true; // Remplacer par une logique réelle pour vérifier si l'utilisateur est admin
+
+    if (isAdmin) {
+      // Gestion de la suppression des messages
+      document.querySelectorAll(".deleteMessageButton").forEach((button) => {
+        button.addEventListener("click", function () {
+          const messageId =
+            this.closest(".message-item").getAttribute("data-message-id");
+          const messageItem = this.closest(".message-item");
+
+          // Envoyer une requête au serveur pour supprimer le message
+          fetch(`/delete-message/${messageId}`, { method: "DELETE" }).then(
+            (response) => {
+              if (response.ok) {
+                messageItem.remove(); // Supprimer le message de la liste
+              } else {
+                alert("Erreur lors de la suppression du message.");
+              }
+            }
+          );
+        });
+      });
+
+      // Gestion de la suppression des discussions
+      document.querySelectorAll(".deleteDiscussionButton").forEach((button) => {
+        button.addEventListener("click", function () {
+          const discussionId = this.getAttribute("data-discussion-id");
+          const discussionItem = this.closest(".discussion-item");
+
+          // Envoyer une requête au serveur pour supprimer la discussion
+          fetch(`/delete-discussion/${discussionId}`, {
+            method: "DELETE",
+          }).then((response) => {
+            if (response.ok) {
+              discussionItem.remove(); // Supprimer la discussion de la liste
+            } else {
+              alert("Erreur lors de la suppression de la discussion.");
+            }
+          });
+        });
+      });
+    }
+  });
+});
