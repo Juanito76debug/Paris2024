@@ -1,8 +1,6 @@
 window.onload = function () {
   // Fonction pour récupérer le type d'utilisateur (exemple simplifié)
   function getUserType() {
-    // Remplace cette logique par la logique réelle pour déterminer le type d'utilisateur
-    // Par exemple, tu peux récupérer cette information depuis le backend ou les cookies
     return localStorage.getItem("userType") || "visiteur"; // 'visiteur', 'membre' ou 'administrateur'
   }
 
@@ -1863,4 +1861,100 @@ document.addEventListener("DOMContentLoaded", async function () {
       });
     }
   });
+});
+const socket = io();
+document.addEventListener("DOMContentLoaded", function () {
+  // Récupérer les discussions disponibles
+  fetch("/api/getDiscussions")
+    .then((response) => response.json())
+    .then((discussions) => {
+      const discussionSelect = document.getElementById("discussionSelect");
+      discussions.forEach((discussion) => {
+        const option = document.createElement("option");
+        option.value = discussion._id;
+        option.textContent = discussion.title;
+        discussionSelect.appendChild(option);
+      });
+    });
+
+  document
+    .getElementById("joinDiscussionForm")
+    .addEventListener("submit", function (event) {
+      event.preventDefault();
+      const discussionId = document.getElementById("discussionSelect").value;
+      socket.emit("join discussion", discussionId);
+    });
+});
+document.addEventListener("DOMContentLoaded", function () {
+  // Récupérer les amis disponibles
+  fetch("/api/getFriends")
+    .then((response) => response.json())
+    .then((friends) => {
+      const friendSelect = document.getElementById("friendSelect");
+      friends.forEach((friend) => {
+        const option = document.createElement("option");
+        option.value = friend._id;
+        option.textContent = `${friend.firstName} ${friend.lastName}`;
+        friendSelect.appendChild(option);
+      });
+    });
+
+  document
+    .getElementById("startDiscussionForm")
+    .addEventListener("submit", function (event) {
+      event.preventDefault();
+      const friendId = document.getElementById("friendSelect").value;
+      socket.emit("start discussion", friendId);
+      window.location.href = "chat.html";
+    });
+});
+document
+  .getElementById("chatForm")
+  .addEventListener("submit", function (event) {
+    event.preventDefault();
+    const input = document.getElementById("messageInput");
+    socket.emit("chat message", input.value);
+    input.value = "";
+  });
+
+socket.on("chat message", function (msg) {
+  const item = document.createElement("div");
+  item.textContent = msg;
+  document.getElementById("messages").appendChild(item);
+});
+
+// Logique pour afficher la section administrateur
+const isAdmin = true; // Remplacer par la logique réelle pour vérifier si l'utilisateur est admin
+if (isAdmin) {
+  document.getElementById("adminSection").style.display = "block";
+
+  // Récupérer les amis disponibles
+  fetch("/api/getFriends")
+    .then((response) => response.json())
+    .then((friends) => {
+      const friendSelect = document.getElementById("friendSelect");
+      friends.forEach((friend) => {
+        const option = document.createElement("option");
+        option.value = friend._id;
+        option.textContent = `${friend.firstName} ${friend.lastName}`;
+        friendSelect.appendChild(option);
+      });
+    });
+
+  document
+    .getElementById("startDiscussionForm")
+    .addEventListener("submit", function (event) {
+      event.preventDefault();
+      const friendId = document.getElementById("friendSelect").value;
+      socket.emit("start discussion", friendId);
+      document.getElementById("chatForm").style.display = "block";
+      document.getElementById("messages").innerHTML =
+        "<p>En attente de l'ami...</p>";
+    });
+}
+
+socket.on("discussion message", function (msg) {
+  const item = document.createElement("div");
+  item.textContent = msg;
+  document.getElementById("messages").appendChild(item);
 });

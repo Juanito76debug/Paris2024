@@ -6,6 +6,8 @@ import cors from "cors";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
+import { Server } from "socket.io";
+import http from "http";
 
 dotenv.config();
 
@@ -21,6 +23,65 @@ mongoose
   .connect("mongodb://localhost:27017/jo2024")
   .then(() => console.log("Connexion à MongoDB réussie"))
   .catch((err) => console.error("Erreur de connexion à MongoDB:", err));
+
+const server = http.createServer(app);
+
+// Initialisation de Socket.IO
+const io = new Server(server);
+const onlineUsers = {};
+
+// Gestion des connexions Socket.IO
+io.on("connection", (socket) => {
+  console.log("Un utilisateur est connecté");
+
+  socket.on("userConnected", (userId) => {
+    onlineUsers[userId] = socket.id;
+    console.log(`L'utilisateur ${userId} est maintenant en ligne.`);
+  });
+
+  socket.on("disconnect", () => {
+    for (let userId in onlineUsers) {
+      if (onlineUsers[userId] === socket.id) {
+        delete onlineUsers[userId];
+        console.log(`L'utilisateur ${userId} est maintenant hors ligne.`);
+        break;
+      }
+    }
+    console.log("Un utilisateur est déconnecté");
+  });
+  socket.on("chat message", (msg) => {
+    io.emit("chat message", msg);
+  });
+  socket.on("join discussion", (discussionId) => {
+    socket.join(discussionId);
+    socket.emit(
+      "discussion message",
+      `Vous avez rejoint la discussion ${discussionId}`
+    );
+  });
+
+  socket.on("start discussion", async (friendId) => {
+    try {
+      const friend = await User.findById(friendId);
+      if (friend) {
+        friend.status = "En attente";
+        await friend.save();
+        socket.join(friendId);
+        socket.emit(
+          "discussion message",
+          `Vous avez démarré une discussion avec ${friend.firstName} ${friend.lastName}`
+        );
+      }
+    } catch (err) {
+      console.error("Erreur lors du démarrage de la discussion:", err);
+    }
+  });
+
+  socket.on("discussion message", (msg) => {
+    const { discussionId, content } = msg;
+    io.to(discussionId).emit("discussion message", content);
+  });
+});
 
 // Définition des modèles
 const userSchema = new mongoose.Schema({
@@ -240,6 +301,53 @@ app.get("/api/getDiscussions", async (req, res) => {
     res.status(500).json({ error: "Erreur du serveur." });
   }
 });
+app.get("/api/getFriends", async (req, res) => {
+  try {
+    const friends = await User.find(
+      { status: "Confirmé" },
+      "firstName lastName _id"
+    );
+    res.status(200).json(friends);
+  } catch (err) {
+    console.error("Erreur lors de la récupération des amis:", err);
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
+app.get("/api/connectedConfirmedFriends/:adminId", async (req, res) => {
+  const { adminId } = req.params;
+
+  try {
+    const admin = await User.findById(adminId).populate(
+      "friends.friendId",
+      "username lastName firstName profilePhoto status"
+    );
+    if (!admin) {
+      return res.status(404).json({ error: "Administrateur non trouvé." });
+    }
+
+    const confirmedAndConnectedFriends = admin.friends
+      .filter(
+        (friend) =>
+          friend.status === "Confirmé" && onlineUsers[friend.friendId._id]
+      )
+      .map((friend) => ({
+        username: friend.friendId.username,
+        lastName: friend.friendId.lastName,
+        firstName: friend.friendId.firstName,
+        profilePhoto: friend.friendId.profilePhoto,
+        userId: friend.friendId._id,
+      }));
+
+    res.status(200).json(confirmedAndConnectedFriends);
+  } catch (err) {
+    console.error(
+      "Erreur lors de la récupération des amis confirmés et connectés:",
+      err
+    );
+    res.status(500).json({ error: "Erreur du serveur." });
+  }
+});
+
 // Route pour gérer l'inscription
 app.post("/api/register", async (req, res) => {
   const {
@@ -849,6 +957,35 @@ app.post("/api/postMessageInDiscussion", async (req, res) => {
   }
 });
 
+app.post("/participer", (req, res) => {
+  const participantEmail = req.body.email;
+  // Autres processus de participation
+
+  // Envoi de l'email de confirmation
+  sendEmailConfirmation(
+    participantEmail,
+    "Confirmation de participation",
+    "Merci pour votre participation !"
+  );
+
+  res.status(200).send("Participation enregistrée et email envoyé.");
+});
+app.post("/envoyer-confirmation", (req, res) => {
+  const participants = req.body.participants; // Par exemple, un tableau d'emails
+
+  participants.forEach((participantEmail) => {
+    sendEmailConfirmation(
+      participantEmail,
+      "Confirmation de participation",
+      "Merci pour votre participation !"
+    );
+  });
+
+  res
+    .status(200)
+    .send("Emails de confirmation envoyés à tous les participants.");
+});
+
 app.delete("/api/removeFriend/:adminId/:friendId", async (req, res) => {
   const { adminId, friendId } = req.params;
 
@@ -953,7 +1090,6 @@ app.delete("/api/deleteDiscussionMessage/:messageId", async (req, res) => {
     res.status(500).json({ error: "Erreur du serveur." });
   }
 });
-
 
 app.listen(port, () => {
   console.log(`Serveur en écoute sur http://localhost:${port}`);

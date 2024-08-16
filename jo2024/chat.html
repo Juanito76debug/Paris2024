@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat - Réseau Social JO 2024</title>
+    <link rel="stylesheet" href="styles.css" />
+    <!-- Assure-toi que l'URL du script est correcte -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Chat en Direct</h1>
+      <div id="messages"></div>
+      <form id="chatForm" style="display: none">
+        <input
+          id="messageInput"
+          autocomplete="off"
+          placeholder="Écrire un message..."
+        />
+        <button type="submit">Envoyer</button>
+      </form>
+      <div id="adminSection" style="display: none">
+        <h2>Démarrer une Discussion Instantanée</h2>
+        <form id="startDiscussionForm">
+          <select id="friendSelect">
+            <!-- Les options seront ajoutées dynamiquement -->
+          </select>
+          <button type="submit">Démarrer</button>
+        </form>
+        <button id="sendEmailsBtn">Envoyer les confirmations</button>
+      </div>
+      <a href="profile.html">Retour au profil</a>
+      <a href="member-profile.html">Retour du membre</a>
+    </div>
+
+    <!-- Charger jQuery avant ton script personnalisé -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <script>
+      // Assure-toi que la connexion est établie après le chargement du script Socket.IO
+      const socket = io();
+
+      // Envoi de messages
+      document
+        .getElementById("chatForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          const input = document.getElementById("messageInput");
+          socket.emit("chat message", input.value);
+          input.value = "";
+        });
+
+      // Affichage des messages reçus
+      socket.on("chat message", function (msg) {
+        const item = document.createElement("div");
+        item.textContent = msg;
+        document.getElementById("messages").appendChild(item);
+      });
+
+      // Gestion des discussions instantanées
+      const isAdmin = true; // À remplacer par la vérification réelle de l'admin
+      if (isAdmin) {
+        document.getElementById("adminSection").style.display = "block";
+
+        // Récupérer les amis disponibles
+        fetch("/api/getFriends")
+          .then((response) => response.json())
+          .then((friends) => {
+            const friendSelect = document.getElementById("friendSelect");
+            friends.forEach((friend) => {
+              const option = document.createElement("option");
+              option.value = friend._id;
+              option.textContent = `${friend.firstName} ${friend.lastName}`;
+              friendSelect.appendChild(option);
+            });
+          });
+
+        document
+          .getElementById("startDiscussionForm")
+          .addEventListener("submit", function (event) {
+            event.preventDefault();
+            const friendId = document.getElementById("friendSelect").value;
+            socket.emit("start discussion", { friendId, status: "en attente" });
+            document.getElementById("chatForm").style.display = "block";
+            document.getElementById("messages").innerHTML =
+              "<p>En attente de l'ami...</p>";
+          });
+      }
+
+      socket.on("discussion joined", function (msg) {
+        document.getElementById("messages").innerHTML = "";
+        const item = document.createElement("div");
+        item.textContent = msg;
+        document.getElementById("messages").appendChild(item);
+      });
+      document
+        .getElementById("sendEmailsBtn")
+        .addEventListener("click", function () {
+          fetch("/envoyer-confirmation", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              participants: ["email1@example.com", "email2@example.com"], // Remplacez par les emails des participants
+            }),
+          })
+            .then((response) => response.text())
+            .then((data) => alert(data))
+            .catch((error) => console.error("Erreur:", error));
+        });
+        function updateStatus(status) {
+  socket.emit("update status", status);
+}
+
+// Recevoir une mise à jour du statut
+socket.on("status update", function (data) {
+  // Affichez ou mettez à jour les statuts des membres ici
+  console.log("Statut mis à jour:", data);
+});
+
+    </script>
+  </body>
+</html>

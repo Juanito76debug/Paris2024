@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Profil du Membre - Réseau Social JO 2024</title>
     <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   </head>
   <body>
     <div class="container">
@@ -147,7 +148,7 @@
             <!-- Exemple d'ami avec bouton de suppression -->
             <li>
               <img
-                src="URL_DE_LA_PHOTO"
+                src="assets/Edouard.png"
                 alt="Photo de PSEUDONYME"
                 class="friend-photo"
               />
@@ -251,6 +252,31 @@
       
         
       </div>
+      <div class="form-container">
+        <div class="form-box">
+          <h2>Rejoindre une Discussion Instantanée</h2>
+          <form id="joinDiscussionForm">
+            <select id="discussionSelect">
+              <!-- Les options seront ajoutées dynamiquement -->
+            </select>
+            <button type="submit">Rejoindre</button>
+          </form>
+        </div>
+      </div>
+
+       <div class="form-container">
+            <div class="form-box">
+              <h2>Démarrer une Discussion Instantanée</h2>
+              <form id="startDiscussionForm">
+                <select id="friendSelect">
+                  <!-- Les options seront ajoutées dynamiquement -->
+                </select>
+                <button type="submit">Démarrer</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      
 
       <a href="index.html" class="button back-link">Retour à l'accueil</a>
       <button id="logoutButton" class="logout-button">Déconnexion</button>
@@ -258,6 +284,7 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="scripts.js"></script>
     <script>
+      const socket = io();
       document.addEventListener("DOMContentLoaded", async function () {
         // Fonction pour mettre à jour le profil
         const form = document.getElementById("editProfileForm");
@@ -481,6 +508,47 @@
           }
         });
       });
+      document.addEventListener("DOMContentLoaded", function () {
+    // Récupérer les discussions disponibles
+    fetch("/api/getDiscussions")
+      .then(response => response.json())
+      .then(discussions => {
+        const discussionSelect = document.getElementById("discussionSelect");
+        discussions.forEach(discussion => {
+          const option = document.createElement("option");
+          option.value = discussion._id;
+          option.textContent = discussion.title;
+          discussionSelect.appendChild(option);
+        });
+      });
+
+    document.getElementById("joinDiscussionForm").addEventListener("submit", function (event) {
+      event.preventDefault();
+      const discussionId = document.getElementById("discussionSelect").value;
+      socket.emit("join discussion", discussionId);
+    });
+  });
+  document.addEventListener("DOMContentLoaded", function () {
+    // Récupérer les amis disponibles
+    fetch("/api/getFriends")
+      .then(response => response.json())
+      .then(friends => {
+        const friendSelect = document.getElementById("friendSelect");
+        friends.forEach(friend => {
+          const option = document.createElement("option");
+          option.value = friend._id;
+          option.textContent = `${friend.firstName} ${friend.lastName}`;
+          friendSelect.appendChild(option);
+        });
+      });
+
+    document.getElementById("startDiscussionForm").addEventListener("submit", function (event) {
+      event.preventDefault();
+      const friendId = document.getElementById("friendSelect").value;
+      socket.emit("start discussion", friendId);
+      window.location.href = "chat.html";
+    });
+  });
     </script>
   </body>
 </html>
