@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Chat - Réseau Social JO 2024</title>
     <link rel="stylesheet" href="styles.css" />
-    <!-- Assure-toi que l'URL du script est correcte -->
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   </head>
   <body>
@@ -34,14 +33,11 @@
       <a href="member-profile.html">Retour du membre</a>
     </div>
 
-    <!-- Charger jQuery avant ton script personnalisé -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     <script>
-      // Assure-toi que la connexion est établie après le chargement du script Socket.IO
       const socket = io();
 
-      // Envoi de messages
       document
         .getElementById("chatForm")
         .addEventListener("submit", function (event) {
@@ -51,28 +47,31 @@
           input.value = "";
         });
 
-      // Affichage des messages reçus
       socket.on("chat message", function (msg) {
         const item = document.createElement("div");
         item.textContent = msg;
         document.getElementById("messages").appendChild(item);
       });
 
-      // Gestion des discussions instantanées
       const isAdmin = true; // À remplacer par la vérification réelle de l'admin
       if (isAdmin) {
         document.getElementById("adminSection").style.display = "block";
 
-        // Récupérer les amis disponibles
         fetch("/api/getFriends")
           .then((response) => response.json())
           .then((friends) => {
             const friendSelect = document.getElementById("friendSelect");
             friends.forEach((friend) => {
-              const option = document.createElement("option");
-              option.value = friend._id;
-              option.textContent = `${friend.firstName} ${friend.lastName}`;
-              friendSelect.appendChild(option);
+              if (
+                (friend.status === "confirmé" ||
+                  friend.status === "rejoindre") &&
+                friend.isConnected
+              ) {
+                const option = document.createElement("option");
+                option.value = friend._id;
+                option.textContent = `${friend.firstName} ${friend.lastName}`;
+                friendSelect.appendChild(option);
+              }
             });
           });
 
@@ -93,7 +92,9 @@
         const item = document.createElement("div");
         item.textContent = msg;
         document.getElementById("messages").appendChild(item);
+        updateStatus("en cours");
       });
+
       document
         .getElementById("sendEmailsBtn")
         .addEventListener("click", function () {
@@ -110,16 +111,22 @@
             .then((data) => alert(data))
             .catch((error) => console.error("Erreur:", error));
         });
-        function updateStatus(status) {
-  socket.emit("update status", status);
-}
 
-// Recevoir une mise à jour du statut
-socket.on("status update", function (data) {
-  // Affichez ou mettez à jour les statuts des membres ici
-  console.log("Statut mis à jour:", data);
-});
+      function updateStatus(status) {
+        socket.emit("update status", status);
+      }
 
+      socket.on("status update", function (data) {
+        console.log("Statut mis à jour:", data);
+      });
+      socket.on("invite received", function (data) {
+        const { discussionId, friendId } = data;
+        // Logique pour gérer l'invitation dans le chat
+        // Par exemple, afficher une notification ou un message
+        alert(
+          `Vous avez été invité à une discussion (ID: ${discussionId}) par un ami (ID: ${friendId})`
+        );
+      });
     </script>
   </body>
 </html>

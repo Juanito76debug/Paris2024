@@ -440,7 +440,18 @@
               </form>
             </div>
           </div>
-
+          <div id="inviteFriendSection" class="form-container">
+            <div class="form-box">
+              <h2>Inviter un ami à une Discussion Instantanée</h2>
+              <form id="inviteFriendForm">
+                <select id="inviteFriendSelect">
+                  <!-- Les options seront ajoutées dynamiquement -->
+                </select>
+                <button type="submit">Inviter</button>
+              </form>
+            </div>
+          </div>
+        </div>
 
         <a href="index.html">Retour à l'accueil</a>
         <button id="logoutButton">Déconnexion</button>
@@ -531,18 +542,19 @@
           });
       });
       document.addEventListener("DOMContentLoaded", (event) => {
-  // Filtrer et afficher les amis avec le statut "confirmé" ou "rejoindre"
-  fetch("/api/getFriends")
-    .then((response) => response.json())
-    .then((friends) => {
-      const friendsList = document.getElementById("friendsList");
-      friends
-        .filter(
-          (friend) => friend.status === "confirmé" || friend.status === "rejoindre"
-        )
-        .forEach((friend) => {
-          const friendItem = document.createElement("li");
-          friendItem.innerHTML = `
+        // Filtrer et afficher les amis avec le statut "confirmé" ou "rejoindre"
+        fetch("/api/getFriends")
+          .then((response) => response.json())
+          .then((friends) => {
+            const friendsList = document.getElementById("friendsList");
+            friends
+              .filter(
+                (friend) =>
+                  friend.status === "confirmé" || friend.status === "rejoindre"
+              )
+              .forEach((friend) => {
+                const friendItem = document.createElement("li");
+                friendItem.innerHTML = `
             <img src="${friend.profilePhoto}" alt="Photo de ${friend.pseudo}" class="friend-photo" />
             <p>Pseudonyme : ${friend.pseudo}</p>
             <p>Nom : ${friend.lastName}</p>
@@ -550,19 +562,63 @@
             <button class="remove-friend-button" data-friend-id="${friend._id}">
               Supprimer
             </button>`;
-          friendsList.appendChild(friendItem);
-        });
-    });
-    
+                friendsList.appendChild(friendItem);
+              });
+          });
 
-      document.getElementById("startDiscussionForm").addEventListener("submit", function (event) {
-      event.preventDefault();
-      const friendId = document.getElementById("friendSelect").value;
-      socket.emit("start discussion", friendId);
-      window.location.href = "chat.html";
-    });
+        document
+          .getElementById("startDiscussionForm")
+          .addEventListener("submit", function (event) {
+            event.preventDefault();
+            const friendId = document.getElementById("friendSelect").value;
+            socket.emit("start discussion", friendId);
+            window.location.href = "chat.html";
+          });
+      });
+      document.addEventListener("DOMContentLoaded", () => {
+        // Remplir le sélecteur d'amis
+        fetch("/api/getFriends")
+          .then((response) => response.json())
+          .then((friends) => {
+            const inviteFriendSelect =
+              document.getElementById("inviteFriendSelect");
+            friends.forEach((friend) => {
+              if (
+                friend.status === "confirmé" ||
+                friend.status === "rejoindre"
+              ) {
+                const option = document.createElement("option");
+                option.value = friend._id;
+                option.textContent = `${friend.firstName} ${friend.lastName}`;
+                inviteFriendSelect.appendChild(option);
+              }
+            });
+          });
 
-  });
+        // Gestion du formulaire d'invitation
+        document
+          .getElementById("inviteFriendForm")
+          .addEventListener("submit", function (event) {
+            event.preventDefault();
+            const friendId =
+              document.getElementById("inviteFriendSelect").value;
+            const discussionId = "ID_DISCUSSION"; // Remplacez par l'ID de la discussion que vous souhaitez inviter
+
+            fetch("/api/inviteFriend", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+              body: JSON.stringify({ friendId, discussionId }),
+            })
+              .then((response) => response.json())
+              .then((data) => {
+                alert(data.message || data.error);
+              })
+              .catch((error) => console.error("Erreur:", error));
+          });
+      });
     </script>
   </body>
 </html>
