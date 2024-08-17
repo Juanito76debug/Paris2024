@@ -8,6 +8,23 @@ import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 import { Server } from "socket.io";
 import http from "http";
+import jwt from "jsonwebtoken";
+
+const authenticateJWT = (req, res, next) => {
+  const token = req.header("Authorization")?.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ error: "Accès refusé. Aucun token fourni." });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded; // Vous pouvez ensuite utiliser req.user dans vos routes
+    next();
+  } catch (err) {
+    res.status(400).json({ error: "Token invalide." });
+  }
+};
 
 dotenv.config();
 
@@ -17,6 +34,33 @@ const port = 3000;
 app.use(cors());
 app.use(express.static(path.join("C:/Users/juan_/Documents/Paris2024/jo2024")));
 app.use(bodyParser.json());
+
+const sendEmailConfirmation = async (email, subject, message) => {
+  try {
+    // Création du transporteur Nodemailer
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER, // Utiliser l'email défini dans .env
+        pass: process.env.EMAIL_PASS, // Utiliser le mot de passe défini dans .env
+      },
+    });
+
+    // Configuration de l'email
+    const mailOptions = {
+      from: process.env.EMAIL_USER, // L'email de l'expéditeur
+      to: email,
+      subject: subject,
+      text: message,
+    };
+
+    // Envoi de l'email
+    await transporter.sendMail(mailOptions);
+    console.log(`Email envoyé avec succès à ${email}`);
+  } catch (error) {
+    console.error("Erreur lors de l'envoi de l'email:", error);
+  }
+};
 
 // Connexion à la base de données MongoDB
 mongoose
@@ -302,12 +346,29 @@ app.get("/api/getDiscussions", async (req, res) => {
   }
 });
 app.get("/api/getFriends", async (req, res) => {
+  const { userId } = req.query; // Supposons que l'utilisateur soit identifié via une requête
+
+  if (!userId) {
+    return res.status(400).json({ error: "L'ID de l'utilisateur est requis." });
+  }
+
   try {
-    const friends = await User.find(
-      { status: "Confirmé" },
+    // Trouver l'utilisateur et récupérer les amis confirmés
+    const user = await User.findById(userId).populate(
+      "friends.friendId",
       "firstName lastName _id"
     );
-    res.status(200).json(friends);
+
+    if (!user) {
+      return res.status(404).json({ error: "Utilisateur non trouvé." });
+    }
+
+    // Filtrer les amis confirmés
+    const confirmedFriends = user.friends.filter(
+      (friend) => friend.status === "Confirmé"
+    );
+
+    res.status(200).json(confirmedFriends.map((f) => f.friendId)); // Retourner seulement les amis confirmés
   } catch (err) {
     console.error("Erreur lors de la récupération des amis:", err);
     res.status(500).json({ error: "Erreur du serveur." });
@@ -346,6 +407,10 @@ app.get("/api/connectedConfirmedFriends/:adminId", async (req, res) => {
     );
     res.status(500).json({ error: "Erreur du serveur." });
   }
+});
+
+app.get("/api/protected-route", authenticateJWT, (req, res) => {
+  res.send("Ceci est une route protégée.");
 });
 
 // Route pour gérer l'inscription
@@ -984,6 +1049,33 @@ app.post("/envoyer-confirmation", (req, res) => {
   res
     .status(200)
     .send("Emails de confirmation envoyés à tous les participants.");
+});
+
+app.post("/api/inviteFriend", authenticateJWT, async (req, res) => {
+  const { friendId, discussionId } = req.body;
+  const userId = req.user.id;
+
+  // Rechercher l'utilisateur et l'ami dans la base de données
+  const user = await User.findById(userId);
+  const friend = await User.findById(friendId);
+
+  if (!user || !friend) {
+    return res.status(404).json({ error: "Utilisateur ou ami non trouvé" });
+  }
+
+  // Envoyer une notification par email à l'ami
+  const emailSubject = "Invitation à une discussion instantanée";
+  const emailMessage = `Bonjour ${friend.firstName},\n\nVous avez été invité à participer à une discussion instantanée avec ${user.firstName}. Veuillez vous connecter pour rejoindre la discussion.\n\nCordialement,\nL'équipe JO 2024`;
+
+  try {
+    await sendEmailConfirmation(friend.email, emailSubject, emailMessage);
+    res.status(200).json({ message: "Invitation envoyée avec succès" });
+  } catch (error) {
+    res.status(500).json({ error: "Erreur lors de l'envoi de l'invitation" });
+  }
+
+  // Émettre un événement Socket.IO pour notifier l'ami
+  io.emit("invite received", { discussionId, friendId });
 });
 
 app.delete("/api/removeFriend/:adminId/:friendId", async (req, res) => {
